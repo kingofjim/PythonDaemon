@@ -80,6 +80,8 @@ class Converter:
         else:
             cursor.execute('update cdn_dns_logs_%s set count = count+1 where date = "%s" and hour = %s and domain = "%s"' % (dt.strftime('%Y%m'), dt.strftime('%Y-%m-%d'), dt.hour, domain))
 
+        self.db.logs.commit()
+
     def touch(self):
         dt = datetime.datetime.now()
         ts = int(dt.timestamp())
