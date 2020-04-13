@@ -4,12 +4,14 @@ from converter import Converter
 from funcs import write_app_log
 import sys, traceback, time
 from database import Database
-import os, re
+import os, re, datetime
 
 
 
 def main():
-    start = time.time()
+    # start = time.time()
+    dt = datetime.datetime.now()
+    write_app_log('Daemon Start - %s\n' % (dt.strftime('%Y-%m-%d %H:%M:%S')))
 
     red = Redis()
     db = Database()
@@ -32,7 +34,7 @@ def main():
             #     "ts": 1586078179,
             #     "client_ip": "101.200.135.25"
             # }
-
+            log = None
             log = json.loads(red.pop()[1])
 
             Converter(log, db, debug)
@@ -49,12 +51,15 @@ def main():
                     retry += 1
                     time.sleep(5)
                     print('retry: ', retry)
-                    red = Redis()
+                    if log is None:
+                        red = Redis()
+                        log = json.loads(red.pop()[1])
+
                     db = Database()
-                    Converter(log, db, conf)
+                    Converter(log, db, debug)
                     break
                 except Exception as e:
-                    # print(e)
+                    print(e)
                     error_class = e.__class__.__name__  # 取得錯誤類型
                     detail = e.args[0]  # 取得詳細內容
                     cl, exc, tb = sys.exc_info()  # 取得Call Stack
@@ -68,19 +73,20 @@ def main():
 
                     print(log)
                     print(errMsg)
-                    write_app_log(str(log) + '\n' + errMsg)
+                    dt = datetime.datetime.now()
+                    write_app_log(("%s\nLog: " + str(log) + '\n' + errMsg) % (dt.strftime('%Y-%m-%d %H:%M:%S')))
 
-        count += 1
+        # count += 1
         # if(debug):
         #     print(count)
 
-    end = time.time()
+    # end = time.time()
     # print("Completed in: ", end - start, " seconds")
 
 def kill():
     # print(pgrep.pgrep('daemon.py'))
 
-    out = os.popen('ps aux | grep "daemon.py main"').read().strip()
+    out = os.popen('ps aux | grep "python3 daemon.py main"').read().strip()
     # print(out.splitlines())
     # print(out.splitlines()[0].strip())
     pid = re.findall(r'(\S+)', out.splitlines()[0])[1]
