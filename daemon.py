@@ -17,7 +17,7 @@ def main():
     count = 1
     while (True):
         try:
-            print("Start")
+            # print("Start")
 
             # log = {
             #     "c": 3395661186,
@@ -66,7 +66,7 @@ def main():
                     write_app_log(str(log) + '\n' + errMsg)
 
         count += 1
-        print(count)
+        # print(count)
 
     end = time.time()
     # print("Completed in: ", end - start, " seconds")
