@@ -1,5 +1,5 @@
 from red import Redis
-import json
+import json, configparser
 from converter import Converter
 from funcs import write_app_log
 import sys, traceback, time
@@ -13,6 +13,9 @@ def main():
 
     red = Redis()
     db = Database()
+    conf = configparser.ConfigParser()
+    conf.read('conf/conf.ini')
+    debug = True if conf['app']['debug'] == 'True' else 0
 
     count = 1
     while (True):
@@ -31,7 +34,9 @@ def main():
             # }
 
             log = json.loads(red.pop()[1])
-            Converter(log, db)
+
+            Converter(log, db, debug)
+            # exit()
 
         except KeyboardInterrupt:
             exit('Force Terminate Python Daemon')
@@ -46,7 +51,7 @@ def main():
                     print('retry: ', retry)
                     red = Redis()
                     db = Database()
-                    Converter(log, db)
+                    Converter(log, db, conf)
                     break
                 except Exception as e:
                     # print(e)
@@ -66,7 +71,8 @@ def main():
                     write_app_log(str(log) + '\n' + errMsg)
 
         count += 1
-        # print(count)
+        # if(debug):
+        #     print(count)
 
     end = time.time()
     # print("Completed in: ", end - start, " seconds")

@@ -6,9 +6,10 @@ from struct import pack
 
 class Converter:
 
-    def __init__(self, data, db):
+    def __init__(self, data, db, debug):
         self.data = data
         self.db = db
+        self.debug = debug
         {
             'ns': self.dns,
             'nx': self.nginx,
@@ -24,6 +25,10 @@ class Converter:
     def nginx(self):
         domain = search_query_belong(self.data['mt'], self.db, self.data)
 
+        if self.debug:
+            print("query: ", self.data['query'])
+            print("dest: ", domain)
+
         dt = datetime.datetime.fromtimestamp(self.data['ts'])
         timestamp = int(dt.timestamp())
 
@@ -36,6 +41,10 @@ class Converter:
         cursor = self.db.logs.cursor()
         cursor.execute('select domain, sum(sendbyte) as sendbyte from cdn_logs.cdn_web_logs_%s where date = "%s" and hour = %s and domain = "%s"' % (dt.strftime('%Y%m'), dt.strftime('%Y-%m-%d'), dt.hour, self.data['query']))
         select_result = cursor.fetchone()
+
+        if self.debug:
+            print("select_result: ", select_result)
+
         if select_result[0] is None:
             cursor.execute('insert into cdn_web_logs_%s (domain, sendbyte, date, hour) value ("%s", %s, "%s", %s);' % (dt.strftime('%Y%m'), self.data['query'], self.data['byte'], dt.strftime('%Y-%m-%d'), dt.hour))
         else:
@@ -45,6 +54,10 @@ class Converter:
 
     def dns(self):
         domain = search_query_belong(self.data['mt'], self.db, self.data)
+
+        if self.debug:
+            print("query: ", self.data['q'])
+            print("dest: ", domain)
 
         dt = datetime.datetime.fromtimestamp(self.data['ts'])
         timestamp = int(dt.timestamp())
@@ -58,6 +71,10 @@ class Converter:
         cursor = self.db.logs.cursor()
         cursor.execute('select domain, sum(count) from cdn_logs.cdn_dns_logs_%s where date="%s" and domain="%s";' % (dt.strftime('%Y%m'), dt.strftime('%Y-%m-%d'), self.data['q']))
         select_result = cursor.fetchone()
+
+        if self.debug:
+            print("select_result: ", select_result)
+
         if select_result[0] is None:
             cursor.execute('insert into cdn_dns_logs_%s (domain, count, date, hour) value ("%s", 1, "%s", %s);' % (dt.strftime('%Y%m'), self.data['q'], dt.strftime('%Y-%m-%d'), dt.hour))
         else:
