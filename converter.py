@@ -26,7 +26,7 @@ class Converter:
         domain = search_query_belong(self.data['mt'], self.db, self.data)
 
         if self.debug:
-            print("query: ", self.data['query'])
+            print("[Nginx] query: ", self.data['query'])
             print("dest: ", domain)
 
         dt = datetime.datetime.fromtimestamp(self.data['ts'])
@@ -42,6 +42,7 @@ class Converter:
         cursor.execute('select domain, sendbyte from cdn_logs.cdn_web_logs_%s where date = "%s" and hour = %s and domain = "%s"' % (dt.strftime('%Y%m'), dt.strftime('%Y-%m-%d'), dt.hour, domain))
         select_result = cursor.fetchone()
 
+        print(select_result)
         if self.debug:
             print("select_result: ", select_result)
 
@@ -56,7 +57,7 @@ class Converter:
         domain = search_query_belong(self.data['mt'], self.db, self.data)
 
         if self.debug:
-            print("query: ", self.data['q'])
+            print("[DNS] query: ", self.data['q'])
             print("dest: ", domain)
 
         dt = datetime.datetime.fromtimestamp(self.data['ts'])
