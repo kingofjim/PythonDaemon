@@ -39,16 +39,16 @@ class Converter:
                   (dt.strftime('%Y-%m-%d %H:%M:%S'), self.data['client_ip'], self.data['country'], self.data['city'], self.data['query'], domain, inet_ntoa(pack("!L", self.data['addr'])), self.data['offset']))
 
         cursor = self.db.logs.cursor()
-        cursor.execute('select domain, sendbyte from cdn_logs.cdn_web_logs_%s where date = "%s" and hour = %s and domain = "%s"' % (dt.strftime('%Y%m'), dt.strftime('%Y-%m-%d'), dt.hour, self.data['query']))
+        cursor.execute('select domain, sendbyte from cdn_logs.cdn_web_logs_%s where date = "%s" and hour = %s and domain = "%s"' % (dt.strftime('%Y%m'), dt.strftime('%Y-%m-%d'), dt.hour, domain))
         select_result = cursor.fetchone()
 
         if self.debug:
             print("select_result: ", select_result)
 
         if select_result is None:
-            cursor.execute('insert into cdn_web_logs_%s (domain, sendbyte, date, hour) value ("%s", %s, "%s", %s);' % (dt.strftime('%Y%m'), self.data['query'], self.data['byte'], dt.strftime('%Y-%m-%d'), dt.hour))
+            cursor.execute('insert into cdn_web_logs_%s (domain, sendbyte, date, hour) value ("%s", %s, "%s", %s);' % (dt.strftime('%Y%m'), domain, self.data['byte'], dt.strftime('%Y-%m-%d'), dt.hour))
         else:
-            cursor.execute('update cdn_web_logs_%s set sendbyte = sendbyte + %s  where date = "%s" and hour = %s and domain = "%s"' % (dt.strftime('%Y%m'), self.data['byte'], dt.strftime('%Y-%m-%d'), dt.hour, self.data['query']))
+            cursor.execute('update cdn_web_logs_%s set sendbyte = sendbyte + %s  where date = "%s" and hour = %s and domain = "%s"' % (dt.strftime('%Y%m'), self.data['byte'], dt.strftime('%Y-%m-%d'), dt.hour, domain))
         self.db.logs.commit()
 
 
@@ -69,16 +69,16 @@ class Converter:
                   (dt.strftime('%Y-%m-%d %H:%M:%S'), self.data['qz'], self.data['qt'], self.data['client_ip'], self.data['q'], domain, str(self.data['offset'])))
 
         cursor = self.db.logs.cursor()
-        cursor.execute('select domain, count from cdn_logs.cdn_dns_logs_%s where date="%s" and domain="%s" and hour = "%s";' % (dt.strftime('%Y%m'), dt.strftime('%Y-%m-%d'), self.data['q'], dt.hour))
+        cursor.execute('select domain, count from cdn_logs.cdn_dns_logs_%s where date="%s" and domain="%s" and hour = "%s";' % (dt.strftime('%Y%m'), dt.strftime('%Y-%m-%d'), domain, dt.hour))
         select_result = cursor.fetchone()
 
         if self.debug:
             print("select_result: ", select_result)
 
         if select_result is None:
-            cursor.execute('insert into cdn_dns_logs_%s (domain, count, date, hour) value ("%s", 1, "%s", %s);' % (dt.strftime('%Y%m'), self.data['q'], dt.strftime('%Y-%m-%d'), dt.hour))
+            cursor.execute('insert into cdn_dns_logs_%s (domain, count, date, hour) value ("%s", 1, "%s", %s);' % (dt.strftime('%Y%m'), domain, dt.strftime('%Y-%m-%d'), dt.hour))
         else:
-            cursor.execute('update cdn_dns_logs_%s set count = count+1 where date = "%s" and hour = %s and domain = "%s"' % (dt.strftime('%Y%m'), dt.strftime('%Y-%m-%d'), dt.hour, self.data['q']))
+            cursor.execute('update cdn_dns_logs_%s set count = count+1 where date = "%s" and hour = %s and domain = "%s"' % (dt.strftime('%Y%m'), dt.strftime('%Y-%m-%d'), dt.hour, domain))
 
     def touch(self):
         dt = datetime.datetime.now()
