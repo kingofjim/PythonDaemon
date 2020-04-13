@@ -1,7 +1,7 @@
 from red import Redis
 import json, configparser
 from converter import Converter
-from funcs import write_app_log
+from funcs import write_app_log, write_pid, get_pid
 import sys, traceback, time
 from database import Database
 import os, re, datetime
@@ -9,6 +9,9 @@ import os, re, datetime
 
 
 def main():
+    pid = os.getpid()
+    write_pid(str(pid))
+
     # start = time.time()
     dt = datetime.datetime.now()
     write_app_log('Daemon Start - %s\n' % (dt.strftime('%Y-%m-%d %H:%M:%S')))
@@ -19,7 +22,7 @@ def main():
     conf.read('conf/conf.ini')
     debug = True if conf['app']['debug'] == 'True' else 0
 
-    count = 1
+    # count = 1
     while (True):
         try:
             # print("Start")
@@ -84,26 +87,8 @@ def main():
     # print("Completed in: ", end - start, " seconds")
 
 def kill():
-    # print(pgrep.pgrep('daemon.py'))
-
-    out = os.popen('ps aux | grep "python3 daemon.py main"').read().strip()
-    # print(out.splitlines())
-    # print(out.splitlines()[0].strip())
-    pid = re.findall(r'(\S+)', out.splitlines()[0])[1]
+    pid = get_pid()
     os.popen('kill '+ pid).read().strip()
-    # print(list(map(str, out.splitlines())))
-
-    # print(sh.grep(sh.ps('aux'), 'python3'))
-
-    # a = subprocess.call(['ls'])
-    # print(a[0])
-
-    # p1 = Popen(['ps', 'aux'], stdout=PIPE)
-    # p2 = Popen(['grep', '"python3 daemon.py main"'], stdin=p1.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # a = p2.communicate()
-    # p1.stdout.close()
-    # p2.stdout.close()
-    # print(a)
 
 # data = json.loads(red.pop())
 # data = {'c': 3670817576, 'mt': 'ns', 'offset': 36782851, 'q': 'tcsh.ns.leacloud.net', 'qt': 'AAAA', 'qz': 'GX', 'ts': 1586078184, 'client_ip': '35.220.246.26'}

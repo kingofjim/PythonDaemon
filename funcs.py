@@ -11,6 +11,14 @@ def write_app_log(text):
     with open('log/error.log', 'a+') as f:
         f.write(text)
 
+def write_pid(text):
+    with open('pid.log', 'w+') as f:
+        f.write(text)
+
+def get_pid():
+    with open('pid.log', 'r') as f:
+        if iter(f):
+            return next(f)
 
 def search_query_belong(type, db, data):
     domain = ''

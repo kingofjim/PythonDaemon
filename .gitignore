@@ -4,3 +4,4 @@ conf/conf.ini
 log/
 tmp/
 venv
+pid.log
