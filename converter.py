@@ -42,7 +42,6 @@ class Converter:
         cursor.execute('select domain, sendbyte from cdn_logs.cdn_web_logs_%s where date = "%s" and hour = %s and domain = "%s"' % (dt.strftime('%Y%m'), dt.strftime('%Y-%m-%d'), dt.hour, domain))
         select_result = cursor.fetchone()
 
-        print(select_result)
         if self.debug:
             print("select_result: ", select_result)
 
