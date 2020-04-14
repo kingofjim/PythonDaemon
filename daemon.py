@@ -44,7 +44,7 @@ def main():
             # exit()
 
         except KeyboardInterrupt:
-            exit('Force Terminate Python Daemon')
+            sys.exit('Force Terminate Python Daemon')
 
         except:
             # retry
