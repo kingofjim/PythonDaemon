@@ -19,7 +19,7 @@ def main():
     red = Redis()
     db = Database()
     conf = configparser.ConfigParser()
-    conf.read('conf/conf.ini')
+    conf.read('conf.ini')
     debug = True if conf['app']['debug'] == 'True' else 0
 
     # count = 1

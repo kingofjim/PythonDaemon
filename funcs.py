@@ -3,7 +3,7 @@ import configparser, datetime
 
 def write_log(dest, text):
     conf = configparser.ConfigParser()
-    conf.read('conf/conf.ini')
+    conf.read('conf.ini')
     with open(conf['log']['dir'] + dest, 'a') as f:
         f.write(text)
 

@@ -1,7 +1,6 @@
 .idea
 __pycache__
-conf/conf.ini
-log/
+conf.ini
+*.log
 tmp/
 venv
-pid.log

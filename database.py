@@ -5,7 +5,7 @@ class Database:
 
     def __init__(self):
         conf = configparser.ConfigParser()
-        conf.read('conf/conf.ini')
+        conf.read('conf.ini')
         self.dns = MySQLdb.connect(conf['mysql-dns']['host'], conf['mysql-dns']['username'], conf['mysql-dns']['pass'], conf['mysql-dns']['database'])
         self.logs = MySQLdb.connect(conf['mysql-logs']['host'], conf['mysql-logs']['username'], conf['mysql-logs']['pass'], conf['mysql-logs']['database'])
 
