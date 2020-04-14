@@ -8,7 +8,7 @@ import os, re, datetime
 
 
 
-def main():
+def start():
     pid = os.getpid()
     write_pid(str(pid))
 
