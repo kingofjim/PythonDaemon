@@ -9,5 +9,5 @@ class Redis:
         conf.read('conf.ini')
         self.r = redis.Redis(host=conf['redis']['host'], port=6379, db=0, password=conf['redis']['pass'])
 
-    def pop(self):
-        return self.r.blpop('cdn_logs')
+    def pop(self, timeout=0):
+        return self.r.blpop('cdn_logs', timeout)
