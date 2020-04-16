@@ -12,7 +12,7 @@ def start():
     pid = os.getpid()
     write_pid(str(pid))
 
-    # start = time.time()
+    # start_time = time.time()
     dt = datetime.datetime.now()
     write_app_log('Daemon Start - %s\n' % (dt.strftime('%Y-%m-%d %H:%M:%S')))
 
@@ -22,8 +22,13 @@ def start():
     conf.read('conf.ini')
     debug = True if conf['app']['debug'] == 'True' else 0
 
-    # count = 1
+    # end_time = time.time()
+
+    # count = 0
+    # while (True and (end_time - start_time < 10)):
     while (True):
+        # end_time = time.time()
+        # print(end_time - start_time)
         try:
             # print("Start")
 
@@ -52,7 +57,7 @@ def start():
             while (True):
                 try:
                     retry += 1
-                    time.sleep(5)
+                    time.sleep(0.5)
                     print('retry: ', retry)
                     if log is None:
                         red = Redis()
@@ -82,9 +87,9 @@ def start():
         # count += 1
         # if(debug):
         #     print(count)
-
-    # end = time.time()
-    # print("Completed in: ", end - start, " seconds")
+    # print(count)
+    # end_time = time.time()
+    # print("Completed in: ", end_time - start_time, " seconds")
 
 def kill():
     pid = get_pid()
