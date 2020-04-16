@@ -5,6 +5,7 @@ from funcs import write_app_log, write_pid, get_pid
 import sys, traceback, time
 from database import Database
 import os, re, datetime
+import redisdl
 
 
 
@@ -94,6 +95,20 @@ def start():
 def kill():
     pid = get_pid()
     os.popen('kill '+ pid).read().strip()
+
+def dump_redis_to_json():
+    json_text = redisdl.dumps()
+
+    with open('tmp/dump.json', 'w') as f:
+        # streams data
+        redisdl.dump(f)
+
+def load_redis_from_json():
+    red = Redis()
+    with open('tmp/dump.json', 'r') as f:
+        data = json.loads(f.__next__())
+        for row in data['cdn_logs']['value']:
+            red.push(row)
 
 # data = json.loads(red.pop())
 # data = {'c': 3670817576, 'mt': 'ns', 'offset': 36782851, 'q': 'tcsh.ns.leacloud.net', 'qt': 'AAAA', 'qz': 'GX', 'ts': 1586078184, 'client_ip': '35.220.246.26'}

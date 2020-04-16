@@ -11,3 +11,6 @@ class Redis:
 
     def pop(self, timeout=0):
         return self.r.blpop('cdn_logs', timeout)
+
+    def push(self, data):
+        return self.r.rpush('cdn_logs', data)
