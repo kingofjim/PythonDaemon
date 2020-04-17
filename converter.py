@@ -12,10 +12,9 @@ class Converter:
         self.debug = debug
         conf = configparser.ConfigParser()
         conf.read('conf.ini')
-
         if conf['app']['mode_nginx_only'] == 'True':
-            if [data['mt']] == 'nx':
-                data['mt']()
+            if data['mt'] == 'nx':
+                self.nginx()
         else:
             {
                 'ns': self.dns,
