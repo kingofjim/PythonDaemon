@@ -2,7 +2,7 @@ from funcs import search_query_belong, write_log
 import datetime
 from socket import inet_ntoa
 from struct import pack
-
+import configparser
 
 class Converter:
 
@@ -10,17 +10,23 @@ class Converter:
         self.data = data
         self.db = db
         self.debug = debug
-        {
-            'ns': self.dns,
-            'nx': self.nginx,
-            'touch': self.touch,
-            'nxl': self.touch_service,
-            'nsc': self.touch_service,
-            'nxc': self.touch_service,
-            'nxr': self.touch_reload,
-            'nsr': self.touch_reload,
-            'sysinfo': self.touch_sys,
-        }[data['mt']]()
+        conf = configparser.ConfigParser()
+        conf.read('conf.ini')
+
+        if conf['app']['mode_nginx_only'] == 'True' and [data['mt']] == 'nx':
+            data['mt']()
+        else:
+            {
+                'ns': self.dns,
+                'nx': self.nginx,
+                'touch': self.touch,
+                'nxl': self.touch_service,
+                'nsc': self.touch_service,
+                'nxc': self.touch_service,
+                'nxr': self.touch_reload,
+                'nsr': self.touch_reload,
+                'sysinfo': self.touch_sys,
+            }[data['mt']]()
 
     def nginx(self):
         domain = search_query_belong(self.data['mt'], self.db, self.data)
