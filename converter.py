@@ -13,8 +13,9 @@ class Converter:
         conf = configparser.ConfigParser()
         conf.read('conf.ini')
 
-        if conf['app']['mode_nginx_only'] == 'True' and [data['mt']] == 'nx':
-            data['mt']()
+        if conf['app']['mode_nginx_only'] == 'True':
+            if [data['mt']] == 'nx':
+                data['mt']()
         else:
             {
                 'ns': self.dns,
