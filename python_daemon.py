@@ -14,6 +14,9 @@ def start():
     write_pid(str(pid))
 
     # start_time = time.time()
+    # end_time = time.time()
+    # count = 0
+
     dt = datetime.datetime.now()
     write_app_log('Daemon Start - %s\n' % (dt.strftime('%Y-%m-%d %H:%M:%S')))
 
@@ -23,13 +26,10 @@ def start():
     conf.read('conf.ini')
     debug = True if conf['app']['debug'] == 'True' else 0
 
-    # end_time = time.time()
 
-    # count = 0
     # while (True and (end_time - start_time < 10)):
     while (True):
         # end_time = time.time()
-        # print(end_time - start_time)
         try:
             # print("Start")
 
