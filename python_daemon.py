@@ -10,109 +10,7 @@ import redisdl
 import threading
 from elasticsearch import Elasticsearch
 
-
 def start():
-    pid = os.getpid()
-    write_pid(str(pid))
-
-    # start_time = time.time()
-    # end_time = time.time()
-    # count = 0
-
-    dt = datetime.datetime.now()
-    write_app_log('Daemon Start - %s\n' % (dt.strftime('%Y-%m-%d %H:%M:%S')))
-
-    red = Redis()
-    db = Database()
-    conf = configparser.ConfigParser()
-    conf.read('conf.ini')
-    debug = True if conf['app']['debug'] == 'True' else 0
-
-
-    # while (True and (end_time - start_time < 10)):
-    while (True):
-        # end_time = time.time()
-        try:
-            # print("Start")
-
-            # log = {
-            #     "c": 3395661186,
-            #     "mt": "ns",
-            #     "offset": 23759119,
-            #     "q": "all.gameblogger.site.hnyhzs.com",
-            #     "qt": "A",
-            #     "qz": "ZJ",
-            #     "ts": 1586078179,
-            #     "client_ip": "101.200.135.25"
-            # }
-            log = None
-            log = json.loads(red.pop()[1])
-
-            Converter(log, db, debug)
-            # exit()
-
-        except KeyboardInterrupt:
-            sys.exit('Force Terminate Python Daemon')
-
-        except:
-            # retry
-            retry = 0
-            while (True):
-                try:
-                    retry += 1
-                    time.sleep(0.5)
-                    print('retry: ', retry)
-                    if log is None:
-                        red = Redis()
-                        log = json.loads(red.pop()[1])
-
-                    db = Database()
-                    Converter(log, db, debug)
-                    break
-                except Exception as e:
-                    print(e)
-                    error_class = e.__class__.__name__  # 取得錯誤類型
-                    detail = e.args[0]  # 取得詳細內容
-                    cl, exc, tb = sys.exc_info()  # 取得Call Stack
-
-                    errMsg = ''
-                    for lastCallStack in traceback.extract_tb(tb):
-                        fileName = lastCallStack[0]  # 取得發生的檔案名稱
-                        lineNum = lastCallStack[1]  # 取得發生的行號
-                        funcName = lastCallStack[2]  # 取得發生的函數名稱
-                        errMsg += "File \"{}\", line {}, in {}: [{}] {}\n".format(fileName, lineNum, funcName, error_class, detail)
-
-                    print(log)
-                    print(errMsg)
-                    dt = datetime.datetime.now()
-                    write_app_log(("%s\nLog: " + str(log) + '\n' + errMsg) % (dt.strftime('%Y-%m-%d %H:%M:%S')))
-
-        # count += 1
-        # if(debug):
-        #     print(count)
-    # print(count)
-    # end_time = time.time()
-    # print("Completed in: ", end_time - start_time, " seconds")
-
-def kill():
-    pid = get_pid()
-    os.popen('kill '+ pid).read().strip()
-
-def dump_redis_to_json():
-    json_text = redisdl.dumps()
-
-    with open('tmp/dump.json', 'w') as f:
-        # streams data
-        redisdl.dump(f)
-
-def load_redis_from_json():
-    red = Redis()
-    with open('tmp/dump.json', 'r') as f:
-        data = json.loads(f.__next__())
-        for row in data['cdn_logs']['value']:
-            red.push(row)
-
-def main():
     # db = Database()
     # print(db.create_tale('web', '202005'))
     # exit()
@@ -156,6 +54,24 @@ def main():
         time.sleep(10)
         now = datetime.now()
 
+
+def kill():
+    pid = get_pid()
+    os.popen('kill '+ pid).read().strip()
+
+def dump_redis_to_json():
+    json_text = redisdl.dumps()
+
+    with open('tmp/dump.json', 'w') as f:
+        # streams data
+        redisdl.dump(f)
+
+def load_redis_from_json():
+    red = Redis()
+    with open('tmp/dump.json', 'r') as f:
+        data = json.loads(f.__next__())
+        for row in data['cdn_logs']['value']:
+            red.push(row)
 
 def job_nginx_main(start_time, end_time):
     db = Database()
