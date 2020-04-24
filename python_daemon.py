@@ -30,29 +30,48 @@ def start():
     print("end_time_main:", end_time_main)
     print("end_time_side:", end_time_side)
 
-    while(True):
-        print(now)
-        # every 5 mins
-        if(end_time_main <= now):
-        # if (True):
-            write_app_log('Main job start at: ' + now.strftime('%Y-%m-%d %H:%I:%S') + '\n')
-            main_job = threading.Thread(target=job_nginx_main(start_time_main, end_time_main))
-            main_job.start()
 
-            start_time_main = end_time_main
-            end_time_main = end_time_main + timedelta(minutes=5)
+    try:
+        while(True):
+            print(now)
+            raise Exception('update_web_sendbyte not respond 200')
+            # every 5 mins
+            if(end_time_main <= now):
+            # if (True):
+                write_app_log('Main job start at: ' + now.strftime('%Y-%m-%d %H:%I:%S') + '\n')
+                main_job = threading.Thread(target=job_nginx_main(start_time_main, end_time_main))
+                main_job.start()
 
-        # every 1 hour
-        if(end_time_side <= now):
-        # if(True):
-            write_app_log('Side job start at: ' + now.strftime('%Y-%m-%d %H:%I:%S') + '\n')
-            side_job = threading.Thread(target=job_nginx_side(start_time_side, end_time_side))
-            side_job.start()
-            start_time_side = end_time_side
-            end_time_side = end_time_side + timedelta(hours=1)
+                start_time_main = end_time_main
+                end_time_main = end_time_main + timedelta(minutes=5)
 
-        time.sleep(10)
-        now = datetime.now()
+            # every 1 hour
+            if(end_time_side <= now):
+            # if(True):
+                write_app_log('Side job start at: ' + now.strftime('%Y-%m-%d %H:%I:%S') + '\n')
+                side_job = threading.Thread(target=job_nginx_side(start_time_side, end_time_side))
+                side_job.start()
+                start_time_side = end_time_side
+                end_time_side = end_time_side + timedelta(hours=1)
+
+            time.sleep(10)
+            now = datetime.now()
+    except Exception as e:
+        print("something wrong")
+        error_class = e.__class__.__name__  # 取得錯誤類型
+        detail = e.args[0]  # 取得詳細內容
+        cl, exc, tb = sys.exc_info()  # 取得Call Stack
+
+        errMsg = ''
+        for lastCallStack in traceback.extract_tb(tb):
+            fileName = lastCallStack[0]  # 取得發生的檔案名稱
+            lineNum = lastCallStack[1]  # 取得發生的行號
+            funcName = lastCallStack[2]  # 取得發生的函數名稱
+            errMsg += "File \"{}\", line {}, in {}: [{}] {}\n".format(fileName, lineNum, funcName, error_class, detail)
+
+        # print(errMsg)
+        dt = datetime.now()
+        write_app_log(("ERROR! %s\n + %s") % (dt.strftime('%Y-%m-%d %H:%M:%S'), errMsg))
 
 
 def kill():
