@@ -34,7 +34,6 @@ def start():
     try:
         while(True):
             print(now)
-            raise Exception('update_web_sendbyte not respond 200')
             # every 5 mins
             if(end_time_main <= now):
             # if (True):
@@ -57,7 +56,7 @@ def start():
             time.sleep(10)
             now = datetime.now()
     except Exception as e:
-        print("something wrong")
+        # print("something wrong")
         error_class = e.__class__.__name__  # 取得錯誤類型
         detail = e.args[0]  # 取得詳細內容
         cl, exc, tb = sys.exc_info()  # 取得Call Stack
