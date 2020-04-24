@@ -82,14 +82,18 @@ def job_nginx_main(start_time, end_time):
         end_time_utc.replace(minute=0, second=0, microsecond=0)
 
     current_web_list = db.get_current_hour_web_record(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
-    cdn_domains = db.get_cdn_domains()
-    not_cdn_domains = db.get_not_cdn_domains()
 
-    # force input OL data for testing
-    cdn_domains = ["leacloud.net", "qnvtang.com", "leacloud.com", "reachvpn.com", "jetstartech.com", "wqlyjy.cn", "lea.cloud", "jtechcloud.com", "leaidc.com", "ahskzs.cn", "tjwohuite.com", "xcpt.cc", "qingzhuinfo.com", "www.ttt.com", "hbajhw.com", "tjflsk.com", "yeemasheji.com", "yunxingshell.com", "foxlora.com", "taoyaoyimei.com", "wlxzn.com", "anjuxinxi.com", "yueyamusic.com", "test.leacloud.net", "tongxueqn.com", "amazingthor.com", "*.wangfenghao.com", "*.xuridong10.com", "*.unnychina.com", "*.hongqiangfood.com", "*.wencangta.com", "*.zkshangcheng.com", "*.atpython.com", "*.qianchenwenwan.com", "*.51linger.com", "*.zjclwl.com", "*.daguosz.com", "*.cfbaoche.com", "*.baliangxian.com", "*.wuhanzl.com", "*.yunyishihu.com", "*.clwdfhw.com", "*.hnstrcyj.com", "*.diyaocc.com", "www.cixiweike.com", "www.lanshengyoupin.com", "www.shanlilaxian.com", "www.52duoshou.com", "www.duanjiekuai.com", "www.rbwrou.com", "www.gromgaz.com", "www.buysedo.com", "www.7723game.com", "www.360applet.com",
-                   "www.huishengjin.com", "www.kanshigaoyao.com", "www.ccssjygs.com", "www.shenzhouxiaoqu.com", "www.chinaynt.com", "www.sports518.com", "www.pcgame198.com", "www.dangle789.com", "www.btsy555.com", "www.baifenyx.com", "www.pintusx.com", "www.frzhibo.com", "www.nanjingcaishui.com", "www.shsxmygs.com", "www.jsonencode.com", "www.xgmgnz.com", "www.sinceidc.com", "www.njyymzp.com", "www.bcruanlianjie.com", "www.wdmuchang.com", "www.ient2fans.com", "www.rikimrobot.com", "www.meiqiyingyu.com", "www.chengqiankj.com", "www.mifeiwangluo.com", "www.lvqqtt.com", "www.wuhanbsz.com", "www.xueqiusj.com", "www.ydllpx.com", "www.queqiaocloud.com", "www.jiajiaoshiting.com", "www.laotsai.com", "www.daoliuliang365.com", "www.jnianji.com", "www.dazhougongjiao.com", "www.hndingkun.com", "www.liangct.com", "www.amandacasa.com", "www.liwushang.com", "www.ruiyoushouyou.com", "www.yychaoli.com", "www.allcureglobal.com", "www.whrenatj.com", "yidaaaa.com", "lea.hncgw.cn", "webld.cqgame.games",
-                   "test12345.tongxueqn.com"]
-    not_cdn_domains = ["gotolcd.net", "adminlcd.net", "highlcd.net", "leaidc.net"]
+    conf = configparser.ConfigParser()
+    conf.read('conf.ini')
+    if conf['app']['force_input_ol_domains'] == 'True':
+        # force input OL data for testing
+        cdn_domains = ["leacloud.net", "qnvtang.com", "leacloud.com", "reachvpn.com", "jetstartech.com", "wqlyjy.cn", "lea.cloud", "jtechcloud.com", "leaidc.com", "ahskzs.cn", "tjwohuite.com", "xcpt.cc", "qingzhuinfo.com", "www.ttt.com", "hbajhw.com", "tjflsk.com", "yeemasheji.com", "yunxingshell.com", "foxlora.com", "taoyaoyimei.com", "wlxzn.com", "anjuxinxi.com", "yueyamusic.com", "test.leacloud.net", "tongxueqn.com", "amazingthor.com", "*.wangfenghao.com", "*.xuridong10.com", "*.unnychina.com", "*.hongqiangfood.com", "*.wencangta.com", "*.zkshangcheng.com", "*.atpython.com", "*.qianchenwenwan.com", "*.51linger.com", "*.zjclwl.com", "*.daguosz.com", "*.cfbaoche.com", "*.baliangxian.com", "*.wuhanzl.com", "*.yunyishihu.com", "*.clwdfhw.com", "*.hnstrcyj.com", "*.diyaocc.com", "www.cixiweike.com", "www.lanshengyoupin.com", "www.shanlilaxian.com", "www.52duoshou.com", "www.duanjiekuai.com", "www.rbwrou.com", "www.gromgaz.com", "www.buysedo.com", "www.7723game.com", "www.360applet.com",
+                       "www.huishengjin.com", "www.kanshigaoyao.com", "www.ccssjygs.com", "www.shenzhouxiaoqu.com", "www.chinaynt.com", "www.sports518.com", "www.pcgame198.com", "www.dangle789.com", "www.btsy555.com", "www.baifenyx.com", "www.pintusx.com", "www.frzhibo.com", "www.nanjingcaishui.com", "www.shsxmygs.com", "www.jsonencode.com", "www.xgmgnz.com", "www.sinceidc.com", "www.njyymzp.com", "www.bcruanlianjie.com", "www.wdmuchang.com", "www.ient2fans.com", "www.rikimrobot.com", "www.meiqiyingyu.com", "www.chengqiankj.com", "www.mifeiwangluo.com", "www.lvqqtt.com", "www.wuhanbsz.com", "www.xueqiusj.com", "www.ydllpx.com", "www.queqiaocloud.com", "www.jiajiaoshiting.com", "www.laotsai.com", "www.daoliuliang365.com", "www.jnianji.com", "www.dazhougongjiao.com", "www.hndingkun.com", "www.liangct.com", "www.amandacasa.com", "www.liwushang.com", "www.ruiyoushouyou.com", "www.yychaoli.com", "www.allcureglobal.com", "www.whrenatj.com", "yidaaaa.com", "lea.hncgw.cn", "webld.cqgame.games",
+                       "test12345.tongxueqn.com"]
+        not_cdn_domains = ["gotolcd.net", "adminlcd.net", "highlcd.net", "leaidc.net"]
+    else:
+        cdn_domains = db.get_cdn_domains()
+        not_cdn_domains = db.get_not_cdn_domains()
 
     # all_active_domains = [x for x in cdn_domains] + [x for x in not_cdn_domains]
 
