@@ -8,7 +8,7 @@ def write_log(dest, text):
         f.write(text)
 
 def write_app_log(text):
-    with open('error.log', 'a+') as f:
+    with open('app.log', 'a+') as f:
         f.write(text)
 
 def write_pid(text):
@@ -104,5 +104,51 @@ def search_query_belong(type, db, data):
         #     db.logs.commit()
 
     domain = query
+
+    return domain
+
+def determin_domain(target, cdn_domains, not_cdn_domains):
+    domain = ''
+    search_domain = cdn_domains
+    query = target
+    query = query.lower()
+    query_seg = query.split('.')
+
+    if len(query_seg) < 3:
+        return query
+    else:
+
+        # check if cname hosting
+        verified_domains = not_cdn_domains
+        suffix = query_seg[-2] + '.' + query_seg[-1]
+        if suffix in verified_domains:
+            prefix_domain = query.replace('.'+suffix, '')
+
+            # check if wild card
+            temp = prefix_domain.split('.')
+            temp[0] = '*'
+            wildcard = '.'.join(temp)
+            if wildcard in search_domain:
+                return wildcard
+
+            # check if exactly mapping
+            if prefix_domain in search_domain:
+                return prefix_domain
+
+            return suffix
+
+        # check if hosted domain
+        if suffix in search_domain:
+            return suffix
+
+        # check if query match
+        temp = query_seg
+        temp[0] = '*'
+        wildcard = '.'.join(temp)
+        if wildcard in search_domain:
+            return wildcard
+
+        if query in search_domain:
+            return query
 
     return domain

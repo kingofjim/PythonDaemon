@@ -4,3 +4,5 @@ conf.ini
 *.log
 tmp/
 venv
+
+nohup.out

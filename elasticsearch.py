@@ -1,0 +1,60 @@
+import requests, configparser
+
+class Elasticsearch:
+
+    def __init__(self):
+        conf = configparser.RawConfigParser()
+        conf.read('conf.ini')
+        self.credentials = (conf['elasticsearch']['username'], conf['elasticsearch']['password'])
+        self.headers = {"Content-Type": "application/json"}
+        # self.body = {}
+        # self.body['headers'] = '{"Content-Type": "application/json"}'
+        # self.body['json'] = '{"track_total_hits": true}'
+
+    def search_sendbtye_by_domains(self, period):
+
+
+        body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword"},"aggs":{"body_bytes_sent":{"sum":{"field":"body_bytes_sent"}}}}}}'
+        # print(body)
+        # exit()
+        response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
+        # if(response.status_code == 200):
+        if(True):
+            # print(response.text)
+            response = response.json()
+            response_bucket = response['aggregations']['domains']['buckets']
+            # print(response_bucket)
+            if response_bucket:
+                return {b['key']: [b['doc_count'],b['body_bytes_sent']['value']] for b in [x for x in response_bucket]}
+            else:
+                return {}
+        else:
+            raise Exception('update_web_sendbyte not respond 200')
+
+
+
+
+    def search_city_count_distribution(self, period):
+        body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword"},"aggs":{"country":{"terms":{"field":"geoip.country_name.keyword"},"aggs":{"distribution":{"terms":{"size":99999,"field":"geoip.region_name.keyword"}}}}}}}}'
+        # print(body)
+        # exit()
+        response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
+        # if(response.status_code == 200):
+        if (True):
+            data = {}
+            response = response.json()
+            # print(response)
+            response_bucket = response['aggregations']['domains']['buckets']
+            # print(response_bucket[0])
+            for country_data in response_bucket:
+                data[country_data['key']] = {}
+                # print(data)
+                # exit()
+                for country in country_data['country']['buckets']:
+                    data[country_data['key']][country['key']] = {}
+                    for city in country['distribution']['buckets']:
+                        data[country_data['key']][country['key']][city['key']] = city['doc_count']
+
+            return data
+        else:
+            raise Exception('update_web_sendbyte not respond 200')
