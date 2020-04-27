@@ -1,10 +1,11 @@
 import requests, configparser
+from os import path
 
 class Elasticsearch:
 
     def __init__(self):
         conf = configparser.RawConfigParser()
-        conf.read('conf.ini')
+        conf.read(path.join(path.dirname(path.abspath(__file__)), 'conf.ini'))
         self.credentials = (conf['elasticsearch']['username'], conf['elasticsearch']['password'])
         self.headers = {"Content-Type": "application/json"}
         # self.body = {}

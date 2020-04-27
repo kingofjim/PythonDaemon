@@ -3,6 +3,7 @@ import datetime
 from socket import inet_ntoa
 from struct import pack
 import configparser
+from os import path
 
 class Converter:
 
@@ -11,7 +12,7 @@ class Converter:
         self.db = db
         self.debug = debug
         conf = configparser.ConfigParser()
-        conf.read('conf.ini')
+        conf.read(path.join(path.dirname(path.abspath(__file__)), 'conf.ini'))
         if conf['app']['mode_nginx_only'] == 'True':
             if data['mt'] == 'nx':
                 self.nginx()
