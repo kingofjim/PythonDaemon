@@ -7,7 +7,9 @@ class Database:
 
     def __init__(self):
         conf = configparser.RawConfigParser()
-        conf.read('conf.ini')
+        print(path.join(path.dirname(path.abspath(__file__)), 'conf.ini'))
+        write_app_log(path.join(path.dirname(path.abspath(__file__)), 'conf.ini') + "\n")
+        conf.read(path.join(path.dirname(path.abspath(__file__)), 'conf.ini'))
         self.dns = MySQLdb.connect(conf['mysql-dns']['host'], conf['mysql-dns']['username'], conf['mysql-dns']['pass'], conf['mysql-dns']['database'])
         self.logs = MySQLdb.connect(conf['mysql-logs']['host'], conf['mysql-logs']['username'], conf['mysql-logs']['pass'], conf['mysql-logs']['database'], charset='utf8mb4')
 

@@ -11,9 +11,9 @@ import threading
 from elasticsearch import Elasticsearch
 
 def start():
-    # db = Database()
+    db = Database()
     # print(db.create_tale('web', '202005'))
-    # exit()
+    exit()
 
     now = datetime.now()
     start_time_main = now
