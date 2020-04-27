@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 import redisdl
 import threading
 from elasticsearch import Elasticsearch
-from os import path
 
 def start():
     # db = Database()
@@ -103,7 +102,7 @@ def job_nginx_main(start_time, end_time):
     current_web_list = db.get_current_hour_web_record(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
 
     conf = configparser.ConfigParser()
-    conf.read(path.join(path.dirname(path.abspath(__file__)), 'conf.ini'))
+    conf.read('conf.ini')
     if conf['app']['force_input_ol_domains'] == 'True':
         # force input OL data for testing
         cdn_domains = ["leacloud.net", "qnvtang.com", "leacloud.com", "reachvpn.com", "jetstartech.com", "wqlyjy.cn", "lea.cloud", "jtechcloud.com", "leaidc.com", "ahskzs.cn", "tjwohuite.com", "xcpt.cc", "qingzhuinfo.com", "www.ttt.com", "hbajhw.com", "tjflsk.com", "yeemasheji.com", "yunxingshell.com", "foxlora.com", "taoyaoyimei.com", "wlxzn.com", "anjuxinxi.com", "yueyamusic.com", "test.leacloud.net", "tongxueqn.com", "amazingthor.com", "*.wangfenghao.com", "*.xuridong10.com", "*.unnychina.com", "*.hongqiangfood.com", "*.wencangta.com", "*.zkshangcheng.com", "*.atpython.com", "*.qianchenwenwan.com", "*.51linger.com", "*.zjclwl.com", "*.daguosz.com", "*.cfbaoche.com", "*.baliangxian.com", "*.wuhanzl.com", "*.yunyishihu.com", "*.clwdfhw.com", "*.hnstrcyj.com", "*.diyaocc.com", "www.cixiweike.com", "www.lanshengyoupin.com", "www.shanlilaxian.com", "www.52duoshou.com", "www.duanjiekuai.com", "www.rbwrou.com", "www.gromgaz.com", "www.buysedo.com", "www.7723game.com", "www.360applet.com",

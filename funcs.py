@@ -1,9 +1,9 @@
 import configparser, datetime
-from os import path
+
 
 def write_log(dest, text):
     conf = configparser.ConfigParser()
-    conf.read(path.join(path.dirname(path.abspath(__file__)), 'conf.ini'))
+    conf.read('conf.ini')
     with open(conf['log']['dir'] + dest, 'a') as f:
         f.write(text)
 

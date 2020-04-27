@@ -1,13 +1,13 @@
 import MySQLdb, configparser
 from datetime import datetime
 from funcs import write_app_log
-from os import path
+
 
 class Database:
 
     def __init__(self):
         conf = configparser.RawConfigParser()
-        conf.read(path.join(path.dirname(path.abspath(__file__)), 'conf.ini'))
+        conf.read('conf.ini')
         self.dns = MySQLdb.connect(conf['mysql-dns']['host'], conf['mysql-dns']['username'], conf['mysql-dns']['pass'], conf['mysql-dns']['database'])
         self.logs = MySQLdb.connect(conf['mysql-logs']['host'], conf['mysql-logs']['username'], conf['mysql-logs']['pass'], conf['mysql-logs']['database'], charset='utf8mb4')
 
