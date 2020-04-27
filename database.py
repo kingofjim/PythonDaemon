@@ -1,6 +1,7 @@
 import MySQLdb, configparser
 from datetime import datetime
 from funcs import write_app_log
+from os import path
 
 
 class Database:
