@@ -17,7 +17,7 @@ def start():
 
     now = datetime.now()
     start_time_main = now
-    end_time_main = start_time_main + timedelta(minutes=1)
+    end_time_main = start_time_main + timedelta(minutes=5)
     start_time_side = now.replace(minute=0, second=0, microsecond=0)
     end_time_side = now.replace(minute=0, second=0, microsecond=0)
     end_time_side = end_time_side + timedelta(hours=1)
