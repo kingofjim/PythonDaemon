@@ -15,7 +15,7 @@ class Elasticsearch:
     def search_sendbtye_by_domains(self, period):
 
 
-        body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword"},"aggs":{"body_bytes_sent":{"sum":{"field":"body_bytes_sent"}}}}}}'
+        body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword","size": 999999999},"aggs":{"body_bytes_sent":{"sum":{"field":"body_bytes_sent"}}}}}}'
         write_app_log("Main - Elasticsearch: %s\n" % body)
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
@@ -36,7 +36,7 @@ class Elasticsearch:
 
 
     def search_city_count_distribution(self, period):
-        body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword"},"aggs":{"country":{"terms":{"field":"geoip.country_name.keyword"},"aggs":{"distribution":{"terms":{"size":99999,"field":"geoip.region_name.keyword"}}}}}}}}'
+        body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword"},"aggs":{"country":{"terms":{"field":"geoip.country_name.keyword"},"aggs":{"distribution":{"terms":{"size":999999999,"field":"geoip.region_name.keyword"}}}}}}}}'
         write_app_log("Side - Elasticsearch: %s\n" % body)
         # print(body)
         # exit()
