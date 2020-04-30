@@ -108,14 +108,14 @@ def search_query_belong(type, db, data):
     return domain
 
 def determin_domain(target, cdn_domains, not_cdn_domains):
-    domain = ''
+    domain = target.lower()
     search_domain = cdn_domains
     query = target
     query = query.lower()
     query_seg = query.split('.')
 
     if len(query_seg) < 3:
-        return query
+        return domain
     else:
 
         # check if cname hosting

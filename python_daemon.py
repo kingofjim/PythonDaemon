@@ -17,7 +17,7 @@ def start():
 
     now = datetime.now()
     start_time_main = now
-    end_time_main = start_time_main + timedelta(minutes=5)
+    end_time_main = start_time_main + timedelta(minutes=1)
     start_time_side = now.replace(minute=0, second=0, microsecond=0)
     end_time_side = now.replace(minute=0, second=0, microsecond=0)
     end_time_side = end_time_side + timedelta(hours=1)
@@ -25,7 +25,7 @@ def start():
     # exit()
     # end_time_side + timedelta(minutes=1)
 
-    write_app_log('Daemon Start at: ' + now.strftime('%Y-%m-%d %H:%I:%S') + '\n')
+    write_app_log('Daemon Start at: ' + now.strftime('%Y-%m-%d %H:%M:%S') + '\n')
     print("start_time:", start_time_main)
     print("end_time_main:", end_time_main)
     print("end_time_side:", end_time_side)
@@ -37,7 +37,7 @@ def start():
             # every 5 mins
             if(end_time_main <= now):
             # if (True):
-                write_app_log('Main job start at: ' + now.strftime('%Y-%m-%d %H:%I:%S') + '\n')
+                write_app_log('Main job start at: ' + now.strftime('%Y-%m-%d %H:%M:%S') + '\n')
                 main_job = threading.Thread(target=job_nginx_main(start_time_main, end_time_main))
                 main_job.start()
 
@@ -47,7 +47,7 @@ def start():
             # every 1 hour
             if(end_time_side <= now):
             # if(True):
-                write_app_log('Side job start at: ' + now.strftime('%Y-%m-%d %H:%I:%S') + '\n')
+                write_app_log('Side job start at: ' + now.strftime('%Y-%m-%d %H:%M:%S') + '\n')
                 side_job = threading.Thread(target=job_nginx_side(start_time_side, end_time_side))
                 side_job.start()
                 start_time_side = end_time_side
@@ -100,6 +100,7 @@ def job_nginx_main(start_time, end_time):
         end_time_utc.replace(minute=0, second=0, microsecond=0)
 
     current_web_list = db.get_current_hour_web_record(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
+    print(current_web_list)
 
     conf = configparser.ConfigParser()
     conf.read('conf.ini')
@@ -113,9 +114,12 @@ def job_nginx_main(start_time, end_time):
         cdn_domains = db.get_cdn_domains()
         not_cdn_domains = db.get_not_cdn_domains()
 
+    print(cdn_domains)
+    print(not_cdn_domains)
     # all_active_domains = [x for x in cdn_domains] + [x for x in not_cdn_domains]
 
     period = [start_time_utc.strftime('%Y-%m-%dT%H:%M:%S'), end_time_utc.strftime('%Y-%m-%dT%H:%M:%S')]
+    print(period)
     # period = ['2020-04-23T00:00:00', '2020-04-23T00:05:00']
 
     elastic = Elasticsearch()
@@ -123,21 +127,21 @@ def job_nginx_main(start_time, end_time):
 
     for query_domain, val in update_list.items():
         domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
+        print(query_domain, "determin domain is: ", domain)
         if(domain):
-            write_app_log('%s => %s' % (query_domain, domain))
+            write_app_log('%s => %s\n' % (query_domain, domain))
+            if (domain in current_web_list):
+                id = current_web_list[domain]
+                db.update_web_record(start_time.strftime('%Y%m'), str(int(val[1])), str(val[0]), id)
+                write_app_log('%s update: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(int(val[1])), str(val[0])))
+                print("update", domain, val)
+            else:
+                id = db.insert_web_record(start_time.strftime('%Y%m'), domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(int(val[1])), str(val[0]))
+                current_web_list[domain] = id
+                write_app_log('%s insert: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(int(val[1])), str(val[0])))
+                print("insert", domain, val)
         else:
-            write_app_log('%s is not registered in database.' % (query_domain))
-
-        if (domain in current_web_list):
-            id = current_web_list[domain]
-            db.update_web_record(start_time.strftime('%Y%m'), str(int(val[1])), str(val[0]), id)
-            write_app_log('%s update: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%I:%S'), domain, id, str(int(val[1])), str(val[0])))
-            print("update", domain, val)
-        else:
-            id = db.insert_web_record(start_time.strftime('%Y%m'), domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(int(val[1])), str(val[0]))
-            current_web_list[domain] = id
-            write_app_log('%s insert: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%I:%S'), domain, id, str(int(val[1])), str(val[0])))
-            print("insert", domain, val)
+            write_app_log('%s is not registered in database.\n' % (query_domain))
 
     db.close()
 
@@ -146,7 +150,7 @@ def job_nginx_side(start_time, end_time):
     # end_time = ''
     db = Database()
     db.update_web_bandwidth(start_time.strftime('%Y%m'), end_time.strftime('%Y-%m-%d'), end_time.hour)
-    write_app_log(end_time.strftime('%Y-%m-%d %H:%I:%S') +' bandwidth updated\n')
+    write_app_log(end_time.strftime('%Y-%m-%d %H:%M:%S') +' bandwidth updated\n')
 
     els = Elasticsearch()
     start_time_utc = start_time - timedelta(hours=8)
@@ -163,7 +167,7 @@ def job_nginx_side(start_time, end_time):
     query_val = query_val[:-1]
     # print(query_val)
     db.insert_web_dist(start_time.strftime('%Y%m'), query_val)
-    write_app_log(end_time.strftime('%Y-%m-%d %H:%I:%S') +' city distribution inserted\n')
+    write_app_log(end_time.strftime('%Y-%m-%d %H:%M:%S') +' city distribution inserted\n')
 
     db.close()
 

@@ -49,7 +49,7 @@ class Database:
         # exit()
         if not self.check_table_exist('cdn_web_logs_%s' % year_month):
             self.create_tale('web', year_month)
-            write_app_log('%s new table cdn_web_logs_%s created' % (datetime.now().strftime('%Y-%m-%d %H:%I:%S'), year_month))
+            write_app_log('%s new table cdn_web_logs_%s created \n' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), year_month))
 
         cur = self.logs.cursor()
         query = 'select id, domain from cdn_web_logs_%s where date="%s" and hour=%s;' % (year_month, date, hour)
@@ -67,8 +67,7 @@ class Database:
     def insert_web_dist(self, year_month, data):
         if not self.check_table_exist('cdn_web_distribution_logs_%s' % year_month):
             self.create_tale('dist', year_month)
-            print('')
-            write_app_log('%s new table cdn_web_distribution_logs_%s created' % (datetime.now().strftime('%Y-%m-%d %H:%I:%S'), year_month))
+            write_app_log('%s new table cdn_web_distribution_logs_%s created\n' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), year_month))
 
         cur = self.logs.cursor()
         query = 'insert into cdn_web_distribution_logs_%s (domain, date, hour, country, city, count) value %s;' % (year_month, data)

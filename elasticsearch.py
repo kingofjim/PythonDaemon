@@ -1,4 +1,5 @@
 import requests, configparser
+from funcs import write_app_log
 
 class Elasticsearch:
 
@@ -15,12 +16,12 @@ class Elasticsearch:
 
 
         body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword"},"aggs":{"body_bytes_sent":{"sum":{"field":"body_bytes_sent"}}}}}}'
-        # print(body)
+        write_app_log("Main - Elasticsearch: %s\n" % body)
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
         # if(response.status_code == 200):
         if(True):
-            # print(response.text)
+            print(response.text)
             response = response.json()
             response_bucket = response['aggregations']['domains']['buckets']
             # print(response_bucket)
@@ -36,6 +37,7 @@ class Elasticsearch:
 
     def search_city_count_distribution(self, period):
         body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword"},"aggs":{"country":{"terms":{"field":"geoip.country_name.keyword"},"aggs":{"distribution":{"terms":{"size":99999,"field":"geoip.region_name.keyword"}}}}}}}}'
+        write_app_log("Side - Elasticsearch: %s\n" % body)
         # print(body)
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
