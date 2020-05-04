@@ -76,6 +76,18 @@ class Database:
         cur.execute(query)
         self.logs.commit()
 
+    def insert_status_dist(self, year_month, data):
+        if not self.check_table_exist('cdn_web_status_logs_%s' % year_month):
+            self.create_tale('status', year_month)
+            write_app_log('%s new table cdn_web_status_logs_%s created\n' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), year_month))
+
+        cur = self.logs.cursor()
+        query = 'insert into cdn_web_status_logs_%s (domain, date, hour, status, count) value %s;' % (year_month, data)
+        print(query)
+        # exit()
+        cur.execute(query)
+        self.logs.commit()
+
     def check_table_exist(self, tablename):
         cur = self.logs.cursor()
         query = 'SELECT * FROM information_schema.tables WHERE table_name = "%s" and not table_schema like "%%backup"' % tablename
@@ -91,6 +103,8 @@ class Database:
             query = "CREATE TABLE `cdn_web_distribution_logs_%s` (  `id` int(20) NOT NULL AUTO_INCREMENT,  `domain` varchar(256) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '所查詢的網域',  `date` date DEFAULT NULL COMMENT '日期',  `hour` tinyint(4) DEFAULT NULL COMMENT '小時',  `country` varchar(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '所查詢的國家',  `city` varchar(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '所查詢的城市',  `count` bigint(20) unsigned DEFAULT 0 COMMENT '訪問次數',  `crtime` datetime DEFAULT current_timestamp() COMMENT '寫入資料庫的時間',  `crtimestamp` int(11) DEFAULT NULL COMMENT '寫入資料庫的時間',  PRIMARY KEY (`id`),  KEY `domain` (`domain`),  KEY `date` (`date`),  KEY `hour` (`hour`),  KEY `crtime` (`crtime`),  KEY `crtimestamp` (`crtimestamp`))" % year_month
         elif type == 'web':
             query = "CREATE TABLE `cdn_web_logs_%s` (  `id` int(20) NOT NULL AUTO_INCREMENT,  `domain` varchar(256) DEFAULT NULL COMMENT '所查詢的網域',  `date` date DEFAULT NULL COMMENT '日期',  `hour` tinyint(4) DEFAULT NULL COMMENT '小時',  `sendbyte` bigint(20) unsigned DEFAULT '0' COMMENT '流量',  `bandwidth` float unsigned DEFAULT '0' COMMENT '頻寬',  `count` bigint(20) unsigned DEFAULT '0' COMMENT '訪問次數',  `crtime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '寫入資料庫的時間',  `crtimestamp` int(11) unsigned DEFAULT NULL COMMENT '寫入資料庫的時間',  PRIMARY KEY (`id`),  KEY `domain` (`domain`),  KEY `date` (`date`),  KEY `hour` (`hour`),  KEY `crtime` (`crtime`),  KEY `crtimestamp` (`crtimestamp`)) CHARSET=utf8;" % year_month
+        elif type == 'status':
+            query = "CREATE TABLE `cdn_web_status_logs_202005` (  `id` int(20) NOT NULL AUTO_INCREMENT,  `domain` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '所查詢的網域',  `date` date DEFAULT NULL COMMENT '日期',  `hour` tinyint(4) DEFAULT NULL COMMENT '小時',  `status` smallint(5) unsigned DEFAULT NULL COMMENT 'HTTP Stauts',  `count` bigint(20) unsigned DEFAULT '0' COMMENT '訪問次數',  `crtime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '寫入資料庫的時間',  `crtimestamp` int(11) DEFAULT NULL COMMENT '寫入資料庫的時間',  PRIMARY KEY (`id`),  KEY `domain` (`domain`),  KEY `date` (`date`),  KEY `hour` (`hour`),  KEY `crtime` (`crtime`),  KEY `crtimestamp` (`crtimestamp`)) ENGINE=InnoDB AUTO_INCREMENT=183 DEFAULT CHARSET=utf8;"
 
         if query:
             cur.execute(query)
