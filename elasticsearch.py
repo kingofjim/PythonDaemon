@@ -30,19 +30,19 @@ class Elasticsearch:
             else:
                 return {}
         else:
-            raise Exception('update_web_sendbyte not respond 200')
+            raise Exception('Elasticsearch search_sendbtye_by_domains not respond 200\n')
 
 
 
 
     def search_city_count_distribution(self, period):
         body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword","size": 999999999},"aggs":{"country":{"terms":{"field":"geoip.country_name.keyword"},"aggs":{"distribution":{"terms":{"size":999999999,"field":"geoip.region_name.keyword"}}}}}}}}'
-        write_app_log("Side - Elasticsearch: %s\n" % body)
+        write_app_log("Side - Elasticsearch city: %s\n" % body)
         # print(body)
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
-        # if(response.status_code == 200):
-        if (True):
+        if(response.status_code == 200):
+        # if (True):
             data = {}
             response = response.json()
             # print(response)
@@ -59,4 +59,27 @@ class Elasticsearch:
 
             return data
         else:
-            raise Exception('update_web_sendbyte not respond 200')
+            raise Exception('Elasticsearch search_city_count_distribution not respond 200\n')
+
+    def search_status_distribution(self, period):
+        body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"' + period[0] + '","lt":"' + period[1] + '"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword","size":999999999},"aggs":{"status":{"terms":{"size":999999999,"field":"status.keyword"}}}}}}'
+        write_app_log("Side - Elasticsearch status: %s\n" % body)
+        # print(body)
+        # exit()
+        response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
+        if (response.status_code == 200):
+            # if (True):
+            data = {}
+            # print(response.text)
+            response = response.json()
+            # print(response)
+            # exit()
+            response_bucket = response['aggregations']['domains']['buckets']
+            for status_data in response_bucket:
+                data[status_data['key']] = {}
+                # exit()
+                for status_count in status_data['status']['buckets']:
+                    data[status_data['key']][status_count['key']] = status_count['doc_count']
+            return data
+        else:
+            raise Exception('Elasticsearch search_status_distribution not respond 200\n')

@@ -13,7 +13,8 @@ from elasticsearch import Elasticsearch
 def start():
     # db = Database()
     # print(db.create_tale('web', '202005'))
-    # exit()
+    # els = Elasticsearch()
+    # period = ("2020-05-03T06:13:15", "2020-05-03T07:13:15")
 
     now = datetime.now()
     start_time_main = now
@@ -52,7 +53,7 @@ def start():
                 side_job.start()
                 start_time_side = end_time_side
                 end_time_side = end_time_side + timedelta(hours=1)
-
+            # exit()
             time.sleep(10)
             now = datetime.now()
     except Exception as e:
@@ -76,20 +77,6 @@ def start():
 def kill():
     pid = get_pid()
     os.popen('kill '+ pid).read().strip()
-
-def dump_redis_to_json():
-    json_text = redisdl.dumps()
-
-    with open('tmp/dump.json', 'w') as f:
-        # streams data
-        redisdl.dump(f)
-
-def load_redis_from_json():
-    red = Redis()
-    with open('tmp/dump.json', 'r') as f:
-        data = json.loads(f.__next__())
-        for row in data['cdn_logs']['value']:
-            red.push(row)
 
 def job_nginx_main(start_time, end_time):
     db = Database()
@@ -150,12 +137,14 @@ def job_nginx_side(start_time, end_time):
     # end_time = ''
     db = Database()
     db.update_web_bandwidth(start_time.strftime('%Y%m'), end_time.strftime('%Y-%m-%d'), end_time.hour)
-    write_app_log(end_time.strftime('%Y-%m-%d %H:%M:%S') +' bandwidth updated\n')
+    write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') +' bandwidth updated\n')
 
     els = Elasticsearch()
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
     period = [start_time_utc.strftime('%Y-%m-%dT%H:%M:%S'), end_time_utc.strftime('%Y-%m-%dT%H:%M:%S')]
+
+    # -- city count --
     dis_data = els.search_city_count_distribution(period)
     # print(dis_data)
     # exit()
@@ -167,7 +156,17 @@ def job_nginx_side(start_time, end_time):
     query_val = query_val[:-1]
     # print(query_val)
     db.insert_web_dist(start_time.strftime('%Y%m'), query_val)
-    write_app_log(end_time.strftime('%Y-%m-%d %H:%M:%S') +' city distribution inserted\n')
+    write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') +' city distribution inserted\n')
+
+    # -- status --
+    elk_status_data = els.search_status_distribution(period)
+    query_val = ''
+    for domain, status_data in elk_status_data.items():
+        for status, count in status_data.items():
+            query_val += '("%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, status, count)
+    query_val = query_val[:-1]
+    db.insert_status_dist(start_time.strftime('%Y%m'), query_val)
+    write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') +' status distribution inserted\n')
 
     db.close()
 
