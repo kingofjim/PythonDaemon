@@ -104,11 +104,37 @@ class Database:
         elif type == 'web':
             query = "CREATE TABLE `cdn_web_logs_%s` (  `id` int(20) NOT NULL AUTO_INCREMENT,  `domain` varchar(256) DEFAULT NULL COMMENT '所查詢的網域',  `date` date DEFAULT NULL COMMENT '日期',  `hour` tinyint(4) DEFAULT NULL COMMENT '小時',  `sendbyte` bigint(20) unsigned DEFAULT '0' COMMENT '流量',  `bandwidth` float unsigned DEFAULT '0' COMMENT '頻寬',  `count` bigint(20) unsigned DEFAULT '0' COMMENT '訪問次數',  `crtime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '寫入資料庫的時間',  `crtimestamp` int(11) unsigned DEFAULT NULL COMMENT '寫入資料庫的時間',  PRIMARY KEY (`id`),  KEY `domain` (`domain`),  KEY `date` (`date`),  KEY `hour` (`hour`),  KEY `crtime` (`crtime`),  KEY `crtimestamp` (`crtimestamp`)) CHARSET=utf8;" % year_month
         elif type == 'status':
-            query = "CREATE TABLE `cdn_web_status_logs_202005` (  `id` int(20) NOT NULL AUTO_INCREMENT,  `domain` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '所查詢的網域',  `date` date DEFAULT NULL COMMENT '日期',  `hour` tinyint(4) DEFAULT NULL COMMENT '小時',  `status` smallint(5) unsigned DEFAULT NULL COMMENT 'HTTP Stauts',  `count` bigint(20) unsigned DEFAULT '0' COMMENT '訪問次數',  `crtime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '寫入資料庫的時間',  `crtimestamp` int(11) DEFAULT NULL COMMENT '寫入資料庫的時間',  PRIMARY KEY (`id`),  KEY `domain` (`domain`),  KEY `date` (`date`),  KEY `hour` (`hour`),  KEY `crtime` (`crtime`),  KEY `crtimestamp` (`crtimestamp`)) ENGINE=InnoDB AUTO_INCREMENT=183 DEFAULT CHARSET=utf8;"
+            query = "CREATE TABLE `cdn_web_status_logs_%s` (  `id` int(20) NOT NULL AUTO_INCREMENT,  `domain` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '所查詢的網域',  `date` date DEFAULT NULL COMMENT '日期',  `hour` tinyint(4) DEFAULT NULL COMMENT '小時',  `status` smallint(5) unsigned DEFAULT NULL COMMENT 'HTTP Stauts',  `count` bigint(20) unsigned DEFAULT '0' COMMENT '訪問次數',  `crtime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '寫入資料庫的時間',  `crtimestamp` int(11) DEFAULT NULL COMMENT '寫入資料庫的時間',  PRIMARY KEY (`id`),  KEY `domain` (`domain`),  KEY `date` (`date`),  KEY `hour` (`hour`),  KEY `crtime` (`crtime`),  KEY `crtimestamp` (`crtimestamp`)) ENGINE=InnoDB AUTO_INCREMENT=183 DEFAULT CHARSET=utf8;" % year_month
 
         if query:
             cur.execute(query)
             self.logs.commit()
+
+    def remove_existed_data(self, dt):
+        year_month = dt.strftime('%Y%m')
+        date = dt.strftime('%Y-%m-%d')
+        hour = dt.hour
+        if self.check_table_exist('cdn_web_status_logs_%s' % year_month):
+            cur = self.logs.cursor()
+            query = 'delete from cdn_web_logs_%s where date = "%s" and hour = %s;' % (year_month, date, hour)
+            write_app_log("%s remove existed data %s\n" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), query))
+            print(query)
+            cur.execute(query)
+
+        if self.check_table_exist('cdn_web_distribution_logs_%s' % year_month):
+            cur = self.logs.cursor()
+            query = 'delete from cdn_web_distribution_logs_%s where date = "%s" and hour = %s;' % (year_month, date, hour)
+            write_app_log("%s remove existed data %s\n" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), query))
+            print(query)
+            cur.execute(query)
+
+        if self.check_table_exist('cdn_web_status_logs_%s' % year_month):
+            cur = self.logs.cursor()
+            query = 'delete from cdn_web_status_logs_%s where date = "%s" and hour = %s;' % (year_month, date, hour)
+            write_app_log("%s remove existed data %s\n" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), query))
+            print(query)
+            cur.execute(query)
+        self.logs.commit()
 
     def close(self):
         self.dns.close()
