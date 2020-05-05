@@ -170,5 +170,39 @@ def job_nginx_side(start_time, end_time):
 
     db.close()
 
+def update_period(p1, p2):
+    print("Start update period %s ~ %s" % (p1, p2))
+    write_app_log("%s Start update period %s ~ %s\n" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), p1, p2))
+
+    db = Database()
+    period_list = []
+    while p1 < p2:
+        new_p1 = p1+timedelta(hours=1)
+        period = (p1, new_p1)
+        p1 = new_p1
+        period_list.append(period)
+    for period in period_list:
+        db.remove_existed_data(period[0])
+        job_nginx_main(period[0], period[1])
+        job_nginx_side(period[0], period[1])
+
+    write_app_log("%s Completed update period \n" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
 if(len(sys.argv) > 1):
-    eval(sys.argv[1])()
+    if sys.argv[1] == 'update_period':
+        if len(sys.argv) == 4:
+            try:
+                p1 = datetime.strptime(sys.argv[2], '%Y-%m-%dT%H:%M:%S')
+                p2 = datetime.strptime(sys.argv[3], '%Y-%m-%dT%H:%M:%S')
+            except ValueError:
+                print('請輸入有效Timestamp ex. update_period 2020-05-04T09:00:00 2020-05-04T18:00:00')
+                exit()
+            if p1.minute != 0 or p1.second != 00 or p2.minute != 0 or p2.second != 00:
+                print('僅接受輸入整點0分0秒 ex. 2020-05-04T09:00:00')
+            else:
+                eval(sys.argv[1])(p1, p2)
+
+        else:
+            print('請輸入有效Timestamp ex. update_period 2020-05-04T09:00:00 2020-05-04T18:00:00')
+    else:
+        eval(sys.argv[1])()
