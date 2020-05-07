@@ -151,8 +151,8 @@ def job_nginx_side(start_time, end_time):
             for city, count in city_data.items():
                 query_val += '("%s","%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, country, city, count)
     query_val = query_val[:-1]
-    # print(query_val)
-    db.insert_web_dist(start_time.strftime('%Y%m'), query_val)
+    if query_val:
+        db.insert_web_dist(start_time.strftime('%Y%m'), query_val)
     write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') +' city distribution inserted\n')
 
     # -- status --
@@ -162,7 +162,8 @@ def job_nginx_side(start_time, end_time):
         for status, count in status_data.items():
             query_val += '("%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, status, count)
     query_val = query_val[:-1]
-    db.insert_status_dist(start_time.strftime('%Y%m'), query_val)
+    if query_val:
+        db.insert_status_dist(start_time.strftime('%Y%m'), query_val)
     write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') +' status distribution inserted\n')
 
     db.close()
