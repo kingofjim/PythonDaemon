@@ -8,7 +8,7 @@ def write_log(dest, text):
         f.write(text)
 
 def write_app_log(text):
-    with open('app.log', 'a+') as f:
+    with open('log/app.log', 'a+') as f:
         f.write(text)
 
 def write_pid(text):

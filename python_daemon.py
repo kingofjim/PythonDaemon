@@ -1,12 +1,9 @@
-from red import Redis
-import json, configparser
-from converter import Converter
-from funcs import write_app_log, write_pid, get_pid, determin_domain
+import configparser
+from funcs import write_app_log, get_pid, determin_domain
 import sys, traceback, time
 from database import Database
-import os, re
+import os
 from datetime import datetime, timedelta
-import redisdl
 import threading
 from elasticsearch import Elasticsearch
 
