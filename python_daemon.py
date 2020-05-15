@@ -14,8 +14,11 @@ def start():
     # period = ("2020-05-03T06:13:15", "2020-05-03T07:13:15")
 
     now = datetime.now()
+    # now = datetime.strptime("2020-05-15T09:59:00", '%Y-%m-%dT%H:%M:%S')
     start_time_main = now
     end_time_main = start_time_main + timedelta(minutes=5)
+    if (start_time_main.hour != end_time_main.hour):
+        end_time_main = end_time_main.replace(minute=0, second=0, microsecond=0)
     start_time_side = now.replace(minute=0, second=0, microsecond=0)
     end_time_side = now.replace(minute=0, second=0, microsecond=0)
     end_time_side = end_time_side + timedelta(hours=1)
@@ -41,6 +44,8 @@ def start():
 
                 start_time_main = end_time_main
                 end_time_main = end_time_main + timedelta(minutes=5)
+                if (start_time_main.hour != end_time_main.hour):
+                    end_time_main = end_time_main.replace(minute=0, second=0, microsecond=0)
 
             # every 1 hour
             if(end_time_side <= now):
@@ -80,11 +85,8 @@ def job_nginx_main(start_time, end_time):
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
 
-    if (end_time_utc.hour != start_time_utc.hour):
-        end_time_utc.replace(minute=0, second=0, microsecond=0)
-
     current_web_list = db.get_current_hour_web_record(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
-    print(current_web_list)
+    print("Main - current_web_list:", current_web_list)
 
     conf = configparser.ConfigParser()
     conf.read('conf.ini')
@@ -93,17 +95,18 @@ def job_nginx_main(start_time, end_time):
         cdn_domains = ["leacloud.net", "qnvtang.com", "leacloud.com", "reachvpn.com", "jetstartech.com", "wqlyjy.cn", "lea.cloud", "jtechcloud.com", "leaidc.com", "ahskzs.cn", "tjwohuite.com", "xcpt.cc", "qingzhuinfo.com", "www.ttt.com", "hbajhw.com", "tjflsk.com", "yeemasheji.com", "yunxingshell.com", "foxlora.com", "taoyaoyimei.com", "wlxzn.com", "anjuxinxi.com", "yueyamusic.com", "test.leacloud.net", "tongxueqn.com", "amazingthor.com", "*.wangfenghao.com", "*.xuridong10.com", "*.unnychina.com", "*.hongqiangfood.com", "*.wencangta.com", "*.zkshangcheng.com", "*.atpython.com", "*.qianchenwenwan.com", "*.51linger.com", "*.zjclwl.com", "*.daguosz.com", "*.cfbaoche.com", "*.baliangxian.com", "*.wuhanzl.com", "*.yunyishihu.com", "*.clwdfhw.com", "*.hnstrcyj.com", "*.diyaocc.com", "www.cixiweike.com", "www.lanshengyoupin.com", "www.shanlilaxian.com", "www.52duoshou.com", "www.duanjiekuai.com", "www.rbwrou.com", "www.gromgaz.com", "www.buysedo.com", "www.7723game.com", "www.360applet.com",
                        "www.huishengjin.com", "www.kanshigaoyao.com", "www.ccssjygs.com", "www.shenzhouxiaoqu.com", "www.chinaynt.com", "www.sports518.com", "www.pcgame198.com", "www.dangle789.com", "www.btsy555.com", "www.baifenyx.com", "www.pintusx.com", "www.frzhibo.com", "www.nanjingcaishui.com", "www.shsxmygs.com", "www.jsonencode.com", "www.xgmgnz.com", "www.sinceidc.com", "www.njyymzp.com", "www.bcruanlianjie.com", "www.wdmuchang.com", "www.ient2fans.com", "www.rikimrobot.com", "www.meiqiyingyu.com", "www.chengqiankj.com", "www.mifeiwangluo.com", "www.lvqqtt.com", "www.wuhanbsz.com", "www.xueqiusj.com", "www.ydllpx.com", "www.queqiaocloud.com", "www.jiajiaoshiting.com", "www.laotsai.com", "www.daoliuliang365.com", "www.jnianji.com", "www.dazhougongjiao.com", "www.hndingkun.com", "www.liangct.com", "www.amandacasa.com", "www.liwushang.com", "www.ruiyoushouyou.com", "www.yychaoli.com", "www.allcureglobal.com", "www.whrenatj.com", "yidaaaa.com", "lea.hncgw.cn", "webld.cqgame.games",
                        "test12345.tongxueqn.com"]
+        cdn_domains = ["reachvpn.com"]
         not_cdn_domains = ["gotolcd.net", "adminlcd.net", "highlcd.net", "leaidc.net"]
     else:
         cdn_domains = db.get_cdn_domains()
         not_cdn_domains = db.get_not_cdn_domains()
 
-    print(cdn_domains)
-    print(not_cdn_domains)
+    print("Main - cdn_domains:", cdn_domains)
+    print("Main - not_cdn_domains:", not_cdn_domains)
     # all_active_domains = [x for x in cdn_domains] + [x for x in not_cdn_domains]
 
     period = [start_time_utc.strftime('%Y-%m-%dT%H:%M:%S'), end_time_utc.strftime('%Y-%m-%dT%H:%M:%S')]
-    print(period)
+    print("Main - period:", period)
     # period = ['2020-04-23T00:00:00', '2020-04-23T00:05:00']
 
     elastic = Elasticsearch()
@@ -140,7 +143,7 @@ def job_nginx_side(start_time, end_time):
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
     period = [start_time_utc.strftime('%Y-%m-%dT%H:%M:%S'), end_time_utc.strftime('%Y-%m-%dT%H:%M:%S')]
-
+    print("Side - period:", period)
     # -- city count --
     dis_data = els.search_city_count_distribution(period)
     # print(dis_data)
