@@ -38,24 +38,17 @@ class Elasticsearch:
     def search_city_count_distribution(self, period):
         body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword","size": 999999999},"aggs":{"country":{"terms":{"field":"geoip.country_name.keyword"},"aggs":{"distribution":{"terms":{"size":999999999,"field":"geoip.region_name.keyword"}}}}}}}}'
         write_app_log("Side - Elasticsearch city: %s\n" % body)
-        # print(body)
-        # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
         if(response.status_code == 200):
+            response = response.json()
             shards = response['_shards']
             if shards['total'] != shards['total']:
                 write_error_log('ERROR!!! %s ~ %s DNS main job shards failed\n' % (period[0], period[1]))
                 raise Exception('ERROR!!! %s ~ %s DNS main job shards failed' % (period[0], period[1]))
-        # if (True):
             data = {}
-            response = response.json()
-            # print(response)
             response_bucket = response['aggregations']['domains']['buckets']
-            # print(response_bucket[0])
             for country_data in response_bucket:
                 data[country_data['key']] = {}
-                # print(data)
-                # exit()
                 for country in country_data['country']['buckets']:
                     data[country_data['key']][country['key']] = {}
                     for city in country['distribution']['buckets']:
@@ -72,6 +65,7 @@ class Elasticsearch:
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
         if (response.status_code == 200):
+            response = response.json()
             shards = response['_shards']
             if shards['total'] != shards['total']:
                 write_error_log('ERROR!!! %s ~ %s DNS main job shards failed\n' % (period[0], period[1]))
@@ -79,7 +73,6 @@ class Elasticsearch:
             # if (True):
             data = {}
             # print(response.text)
-            response = response.json()
             # print(response)
             # exit()
             response_bucket = response['aggregations']['domains']['buckets']
