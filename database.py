@@ -83,13 +83,7 @@ class Database:
         cur = self.logs.cursor()
         query = 'select id, domain from cdn_dns_logs_%s where date="%s" and hour=%s;' % (year_month, date, hour)
         cur.execute(query)
-        result = {}
-        for data in cur.fetchall():
-            if data[1] in result:
-                result[data[1]][data[2]] = data[0]
-            else:
-                result[data[1]] = {data[2]: data[0]}
-        return result
+        return {x[1]:x[0] for x in cur.fetchall()}
 
     def get_current_dns_query_record(self, year_month, date, hour):
         if not self.check_table_exist('cdn_dns_query_logs_%s' % year_month):
