@@ -11,6 +11,10 @@ def write_app_log(text):
     with open('storage/logs/app.log', 'a+') as f:
         f.write(text)
 
+def write_error_log(text):
+    with open('storage/logs/error.log', 'a+') as f:
+        f.write(text)
+
 def write_pid(text):
     with open('pid.log', 'w+') as f:
         f.write(text)

@@ -1,5 +1,5 @@
 import requests, configparser
-from funcs import write_app_log
+from funcs import write_app_log, write_error_log
 
 class Elasticsearch:
 
@@ -19,10 +19,13 @@ class Elasticsearch:
         write_app_log("Main - Elasticsearch: %s\n" % body)
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
-        # if(response.status_code == 200):
-        if(True):
+        if(response.status_code == 200):
             print(response.text)
             response = response.json()
+            shards = response['_shards']
+            if shards['total'] != shards['total']:
+                write_error_log('ERROR!!! %s ~ %s CDN main job shards failed\n' % (period[0], period[1]))
+                raise Exception('ERROR!!! %s ~ %s CDN main job shards failed' % (period[0], period[1]))
             response_bucket = response['aggregations']['domains']['buckets']
             # print(response_bucket)
             if response_bucket:
@@ -32,9 +35,6 @@ class Elasticsearch:
         else:
             raise Exception('Elasticsearch search_sendbtye_by_domains not respond 200\n')
 
-
-
-
     def search_city_count_distribution(self, period):
         body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword","size": 999999999},"aggs":{"country":{"terms":{"field":"geoip.country_name.keyword"},"aggs":{"distribution":{"terms":{"size":999999999,"field":"geoip.region_name.keyword"}}}}}}}}'
         write_app_log("Side - Elasticsearch city: %s\n" % body)
@@ -42,6 +42,10 @@ class Elasticsearch:
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
         if(response.status_code == 200):
+            shards = response['_shards']
+            if shards['total'] != shards['total']:
+                write_error_log('ERROR!!! %s ~ %s DNS main job shards failed\n' % (period[0], period[1]))
+                raise Exception('ERROR!!! %s ~ %s DNS main job shards failed' % (period[0], period[1]))
         # if (True):
             data = {}
             response = response.json()
@@ -68,6 +72,10 @@ class Elasticsearch:
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
         if (response.status_code == 200):
+            shards = response['_shards']
+            if shards['total'] != shards['total']:
+                write_error_log('ERROR!!! %s ~ %s DNS main job shards failed\n' % (period[0], period[1]))
+                raise Exception('ERROR!!! %s ~ %s DNS main job shards failed' % (period[0], period[1]))
             # if (True):
             data = {}
             # print(response.text)
@@ -83,3 +91,58 @@ class Elasticsearch:
             return data
         else:
             raise Exception('Elasticsearch search_status_distribution not respond 200\n')
+
+    def search_dns_query_by_domains(self, period):
+
+        body = '{"aggs":{"2":{"terms":{"field":"query_value.keyword","order":{"_count":"desc"},"size":9999999}}},"size":0,"_source":{"excludes":[]},"stored_fields":["*"],"script_fields":{},"docvalue_fields":[{"field":"@timestamp","format":"date_time"}],"query":{"bool":{"must":[],"filter":[{"match_all":{}},{"range":{"@timestamp":{"format":"strict_date_optional_time","gte":"%s","lt":"%s"}}}],"should":[],"must_not":[]}}}' % (period[0], period[1])
+        write_app_log("Main - Elasticsearch: %s\n" % body)
+        # exit()
+        response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-dns-*/_search/', auth=self.credentials, headers=self.headers, data=body)
+        if response.status_code == 200:
+            # print(response.text)
+            response = response.json()
+            shards = response['_shards']
+            if shards['total'] != shards['total']:
+                write_error_log('ERROR!!! %s ~ %s DNS main job shards failed\n' % (period[0], period[1]))
+                raise Exception('ERROR!!! %s ~ %s DNS main job shards failed' % (period[0], period[1]))
+            response_bucket = response['aggregations']['2']['buckets']
+            # print(response_bucket)
+            if response_bucket:
+                something = {x['key']: x['doc_count'] for x in response_bucket}
+                return something
+            else:
+                return {}
+        else:
+            raise Exception('Elasticsearch search_sendbtye_by_domains not respond 200\n')
+
+    def search_dns_query_by_ip(self, period):
+        body = '{"aggs":{"2":{"terms":{"field":"client_ip.keyword","order":{"_count":"desc"},"size":9999999,"min_doc_count":100},"aggs":{"3":{"terms":{"field":"query_value.keyword","order":{"_count":"desc"},"size":999999}}}}},"size":0,"_source":{"excludes":[]},"stored_fields":["*"],"script_fields":{},"docvalue_fields":[{"field":"@timestamp","format":"date_time"}],"query":{"bool":{"must":[],"filter":[{"match_all":{}},{"range":{"@timestamp":{"format":"strict_date_optional_time","gte":"%s","lt":"%s"}}}],"should":[],"must_not":[]}}}' % (period[0], period[1])
+        write_app_log("Main - Elasticsearch: %s\n" % body)
+        # exit()
+        response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-dns-*/_search/', auth=self.credentials, headers=self.headers, data=body)
+        if response.status_code == 200:
+            # print(response.text)
+            response = response.json()
+            shards = response['_shards']
+            if shards['total'] != shards['total']:
+                write_error_log('ERROR!!! %s ~ %s DNS-IP job shards failed\n' % (period[0], period[1]))
+                raise Exception('ERROR!!! %s ~ %s DNS-IP job shards failed' % (period[0], period[1]))
+            response_bucket = response['aggregations']['2']['buckets']
+            print(response_bucket)
+
+            if response_bucket:
+                result = {}
+                for ip_data in response_bucket:
+                    ip = ip_data['key']
+                    for data in ip_data['3']['buckets']:
+                        domain = data['key'].lower()
+                        count = data['doc_count']
+                        if ip in result:
+                            result[ip][domain] = count
+                        else:
+                            result[ip] = {domain: count}
+                return result
+            else:
+                return {}
+        else:
+            raise Exception('Elasticsearch search_sendbtye_by_domains not respond 200\n')
