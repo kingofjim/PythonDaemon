@@ -94,7 +94,7 @@ def job_nginx_main(start_time, end_time):
     conf.read('conf.ini')
     if conf['app']['force_input_ol_domains'] == 'True':
         # force input OL data for testing
-        cdn_domains = ['leacloud.net','qnvtang.com','leacloud.com','reachvpn.com','jetstartech.com','wqlyjy.cn','lea.cloud','jtechcloud.com','leaidc.com','ahskzs.cn','tjwohuite.com','qingzhuinfo.com','www.ttt.com','hbajhw.com','tjflsk.com','anjuxinxi.com','test.leacloud.net','tongxueqn.com','*.xuridong10.com','*.unnychina.com','*.atpython.com','*.daguosz.com','*.cfbaoche.com','*.baliangxian.com','*.yunyishihu.com','*.clwdfhw.com','*.hnstrcyj.com','www.lanshengyoupin.com','www.shenzhouxiaoqu.com','www.chinaynt.com','www.pcgame198.com','www.pintusx.com','www.frzhibo.com','www.nanjingcaishui.com','www.shsxmygs.com','www.jsonencode.com','www.xgmgnz.com','www.sinceidc.com','www.njyymzp.com','www.bcruanlianjie.com','www.rikimrobot.com','www.mifeiwangluo.com','www.lvqqtt.com','www.wuhanbsz.com','www.xueqiusj.com','www.queqiaocloud.com','www.jiajiaoshiting.com','www.laotsai.com','www.daoliuliang365.com','www.jnianji.com','www.dazhougongjiao.com','www.hndingkun.com','www.liangct.com','www.amandacasa.com','www.ruiyoushouyou.com','www.yychaoli.com','www.allcureglobal.com','www.whrenatj.com','yidaaaa.com','lea.hncgw.cn','webld.cqgame.games','test12345.tongxueqn.com','cc.kkk222.com','cdn.2019wsd.com','webh5ld.cqgame.cc','vip77759.com','tggame.topgame6.com','*.jcxfdc.cn','*.mrqzs.cn','*.dlswl.cn','*.0oiser.club','*.greenpay.xyz','*.greentrad.net','*.greenpay.vip','www.youxizaixian100.com','yilongth.com','weidichuxing.com','dianwankeji.com','haiyunpush.com','qushiyunmei.com']
+        cdn_domains = ['leacloud.net','qnvtang.com','leacloud.com','reachvpn.com','jetstartech.com','wqlyjy.cn','lea.cloud','jtechcloud.com','leaidc.com','ahskzs.cn','tjwohuite.com','www.ttt.com','hbajhw.com','tjflsk.com','anjuxinxi.com','test.leacloud.net','tongxueqn.com','*.unnychina.com','*.atpython.com','*.daguosz.com','*.cfbaoche.com','*.baliangxian.com','*.yunyishihu.com','*.clwdfhw.com','*.hnstrcyj.com','www.lanshengyoupin.com','www.chinaynt.com','www.pcgame198.com','www.pintusx.com','www.frzhibo.com','www.nanjingcaishui.com','www.shsxmygs.com','www.jsonencode.com','www.xgmgnz.com','www.sinceidc.com','www.njyymzp.com','www.rikimrobot.com','www.mifeiwangluo.com','www.lvqqtt.com','www.wuhanbsz.com','www.xueqiusj.com','www.queqiaocloud.com','www.jiajiaoshiting.com','www.laotsai.com','www.daoliuliang365.com','www.dazhougongjiao.com','www.hndingkun.com','www.liangct.com','www.amandacasa.com','www.ruiyoushouyou.com','www.yychaoli.com','www.allcureglobal.com','www.whrenatj.com','yidaaaa.com','lea.hncgw.cn','webld.cqgame.games','test12345.tongxueqn.com','cc.kkk222.com','cdn.2019wsd.com','webh5ld.cqgame.cc','vip77759.com','tggame.topgame6.com','*.jcxfdc.cn','*.mrqzs.cn','*.dlswl.cn','*.0oiser.club','*.greenpay.xyz','*.greentrad.net','*.greenpay.vip','www.youxizaixian100.com','yilongth.com','weidichuxing.com','dianwankeji.com','haiyunpush.com','qushiyunmei.com']
         not_cdn_domains = ["gotolcd.net", "adminlcd.net", "highlcd.net", "leaidc.net"]
     else:
         cdn_domains = db.get_cdn_domains()
@@ -146,8 +146,20 @@ def job_nginx_side(start_time, end_time):
     dis_data = els.search_city_count_distribution(period)
     # print(dis_data)
     # exit()
+
+    conf = configparser.ConfigParser()
+    conf.read('conf.ini')
+    if conf['app']['force_input_ol_domains'] == 'True':
+        # force input OL data for testing
+        cdn_domains = ['leacloud.net','qnvtang.com','leacloud.com','reachvpn.com','jetstartech.com','wqlyjy.cn','lea.cloud','jtechcloud.com','leaidc.com','ahskzs.cn','tjwohuite.com','www.ttt.com','hbajhw.com','tjflsk.com','anjuxinxi.com','test.leacloud.net','tongxueqn.com','*.unnychina.com','*.atpython.com','*.daguosz.com','*.cfbaoche.com','*.baliangxian.com','*.yunyishihu.com','*.clwdfhw.com','*.hnstrcyj.com','www.lanshengyoupin.com','www.chinaynt.com','www.pcgame198.com','www.pintusx.com','www.frzhibo.com','www.nanjingcaishui.com','www.shsxmygs.com','www.jsonencode.com','www.xgmgnz.com','www.sinceidc.com','www.njyymzp.com','www.rikimrobot.com','www.mifeiwangluo.com','www.lvqqtt.com','www.wuhanbsz.com','www.xueqiusj.com','www.queqiaocloud.com','www.jiajiaoshiting.com','www.laotsai.com','www.daoliuliang365.com','www.dazhougongjiao.com','www.hndingkun.com','www.liangct.com','www.amandacasa.com','www.ruiyoushouyou.com','www.yychaoli.com','www.allcureglobal.com','www.whrenatj.com','yidaaaa.com','lea.hncgw.cn','webld.cqgame.games','test12345.tongxueqn.com','cc.kkk222.com','cdn.2019wsd.com','webh5ld.cqgame.cc','vip77759.com','tggame.topgame6.com','*.jcxfdc.cn','*.mrqzs.cn','*.dlswl.cn','*.0oiser.club','*.greenpay.xyz','*.greentrad.net','*.greenpay.vip','www.youxizaixian100.com','yilongth.com','weidichuxing.com','dianwankeji.com','haiyunpush.com','qushiyunmei.com']
+        not_cdn_domains = ["gotolcd.net", "adminlcd.net", "highlcd.net", "leaidc.net"]
+    else:
+        cdn_domains = db.get_cdn_domains()
+        not_cdn_domains = db.get_not_cdn_domains()
+
     query_val = ''
     for domain, country_data in dis_data.items():
+        domain = determin_domain(domain, cdn_domains, not_cdn_domains)
         for country, city_data in country_data.items():
             for city, count in city_data.items():
                 query_val += '("%s","%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, country, city, count)
@@ -160,6 +172,7 @@ def job_nginx_side(start_time, end_time):
     elk_status_data = els.search_status_distribution(period)
     query_val = ''
     for domain, status_data in elk_status_data.items():
+        domain = determin_domain(domain, cdn_domains, not_cdn_domains)
         for status, count in status_data.items():
             query_val += '("%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, status, count)
     query_val = query_val[:-1]
@@ -170,7 +183,7 @@ def job_nginx_side(start_time, end_time):
     db.close()
 
 def job_dns_main(start_time, end_time):
-    function_start_time = datetime.now()
+    job_start_time = datetime.now()
     db = Database()
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
@@ -181,7 +194,7 @@ def job_dns_main(start_time, end_time):
     conf.read('conf.ini')
     if conf['app']['force_input_ol_domains'] == 'True':
         # force input OL data for testing
-        cdn_domains = ['leacloud.net','qnvtang.com','leacloud.com','reachvpn.com','jetstartech.com','wqlyjy.cn','lea.cloud','jtechcloud.com','leaidc.com','ahskzs.cn','tjwohuite.com','qingzhuinfo.com','www.ttt.com','hbajhw.com','tjflsk.com','anjuxinxi.com','test.leacloud.net','tongxueqn.com','*.xuridong10.com','*.unnychina.com','*.atpython.com','*.daguosz.com','*.cfbaoche.com','*.baliangxian.com','*.yunyishihu.com','*.clwdfhw.com','*.hnstrcyj.com','www.lanshengyoupin.com','www.shenzhouxiaoqu.com','www.chinaynt.com','www.pcgame198.com','www.pintusx.com','www.frzhibo.com','www.nanjingcaishui.com','www.shsxmygs.com','www.jsonencode.com','www.xgmgnz.com','www.sinceidc.com','www.njyymzp.com','www.bcruanlianjie.com','www.rikimrobot.com','www.mifeiwangluo.com','www.lvqqtt.com','www.wuhanbsz.com','www.xueqiusj.com','www.queqiaocloud.com','www.jiajiaoshiting.com','www.laotsai.com','www.daoliuliang365.com','www.jnianji.com','www.dazhougongjiao.com','www.hndingkun.com','www.liangct.com','www.amandacasa.com','www.ruiyoushouyou.com','www.yychaoli.com','www.allcureglobal.com','www.whrenatj.com','yidaaaa.com','lea.hncgw.cn','webld.cqgame.games','test12345.tongxueqn.com','cc.kkk222.com','cdn.2019wsd.com','webh5ld.cqgame.cc','vip77759.com','tggame.topgame6.com','*.jcxfdc.cn','*.mrqzs.cn','*.dlswl.cn','*.0oiser.club','*.greenpay.xyz','*.greentrad.net','*.greenpay.vip','www.youxizaixian100.com','yilongth.com','weidichuxing.com','dianwankeji.com','haiyunpush.com','qushiyunmei.com']
+        cdn_domains = ['leacloud.net','qnvtang.com','leacloud.com','reachvpn.com','jetstartech.com','wqlyjy.cn','lea.cloud','jtechcloud.com','leaidc.com','ahskzs.cn','tjwohuite.com','www.ttt.com','hbajhw.com','tjflsk.com','anjuxinxi.com','test.leacloud.net','tongxueqn.com','*.unnychina.com','*.atpython.com','*.daguosz.com','*.cfbaoche.com','*.baliangxian.com','*.yunyishihu.com','*.clwdfhw.com','*.hnstrcyj.com','www.lanshengyoupin.com','www.chinaynt.com','www.pcgame198.com','www.pintusx.com','www.frzhibo.com','www.nanjingcaishui.com','www.shsxmygs.com','www.jsonencode.com','www.xgmgnz.com','www.sinceidc.com','www.njyymzp.com','www.rikimrobot.com','www.mifeiwangluo.com','www.lvqqtt.com','www.wuhanbsz.com','www.xueqiusj.com','www.queqiaocloud.com','www.jiajiaoshiting.com','www.laotsai.com','www.daoliuliang365.com','www.dazhougongjiao.com','www.hndingkun.com','www.liangct.com','www.amandacasa.com','www.ruiyoushouyou.com','www.yychaoli.com','www.allcureglobal.com','www.whrenatj.com','yidaaaa.com','lea.hncgw.cn','webld.cqgame.games','test12345.tongxueqn.com','cc.kkk222.com','cdn.2019wsd.com','webh5ld.cqgame.cc','vip77759.com','tggame.topgame6.com','*.jcxfdc.cn','*.mrqzs.cn','*.dlswl.cn','*.0oiser.club','*.greenpay.xyz','*.greentrad.net','*.greenpay.vip','www.youxizaixian100.com','yilongth.com','weidichuxing.com','dianwankeji.com','haiyunpush.com','qushiyunmei.com']
         not_cdn_domains = ["gotolcd.net", "adminlcd.net", "highlcd.net", "leaidc.net"]
     else:
         cdn_domains = db.get_cdn_domains()
@@ -218,8 +231,9 @@ def job_dns_main(start_time, end_time):
             print('[DNS] %s is not registered in database.\n' % (query_domain))
     db.logs.commit()
 
-    print("[DNS] Time spend %s", (datetime.now()-function_start_time).total_seconds())
+    print("[DNS] Time spend %s" % (datetime.now()-job_start_time).total_seconds())
 
+    job_start_time = datetime.now()
     print("[DNS-IP] job start")
     write_app_log("%s [DNS-IP] job start \n" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     current_dns_ip_list = db.get_current_dns_query_record(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
@@ -246,7 +260,7 @@ def job_dns_main(start_time, end_time):
                 write_app_log('[DNS-IP] %s is not registered in database.\n' % (query_domain))
                 print('[DNS-IP] %s is not registered in database.\n' % (query_domain))
     db.logs.commit()
-
+    print("[DNS-IP] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
     db.close()
 
 def update_period(p1, p2):
