@@ -47,7 +47,6 @@ def start():
                 end_time_main = end_time_main + timedelta(minutes=5)
                 if (start_time_main.hour != end_time_main.hour):
                     end_time_main = end_time_main.replace(minute=0, second=0, microsecond=0)
-                print('start time: ')
             # every 1 hour
             if(end_time_side <= now):
             # if(True):
@@ -265,9 +264,8 @@ def job_dns_main(start_time, end_time):
 
 def update_period(p1, p2):
     print("Start update period %s ~ %s" % (p1, p2))
-    write_app_log("%s Start update period %s ~ %s\n" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), p1, p2))
+    start_time = datetime.now()
 
-    db = Database()
     period_list = []
     while p1 < p2:
         new_p1 = p1+timedelta(hours=1)
@@ -275,12 +273,15 @@ def update_period(p1, p2):
         p1 = new_p1
         period_list.append(period)
     for period in period_list:
+        db = Database()
         db.remove_existed_data(period[0])
+        db.close()
         job_nginx_main(period[0], period[1])
         job_nginx_side(period[0], period[1])
         job_dns_main(period[0], period[1])
 
-    write_app_log("%s Completed update period \n" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    print("%s Completed update period" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    print("update_period %s ~ %s took %s second(s)" % (p1, p2, (start_time - datetime.now()).total_seconds()))
 
 if(len(sys.argv) > 1):
     if sys.argv[1] == 'update_period':

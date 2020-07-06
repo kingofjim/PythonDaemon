@@ -163,7 +163,7 @@ class Database:
         year_month = dt.strftime('%Y%m')
         date = dt.strftime('%Y-%m-%d')
         hour = dt.hour
-        if self.check_table_exist('cdn_web_status_logs_%s' % year_month):
+        if self.check_table_exist('cdn_web_logs_%s' % year_month):
             cur = self.logs.cursor()
             query = 'delete from cdn_web_logs_%s where date = "%s" and hour = %s;' % (year_month, date, hour)
             write_app_log("%s remove existed data %s\n" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), query))
@@ -183,6 +183,7 @@ class Database:
             write_app_log("%s remove existed data %s\n" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), query))
             print(query)
             cur.execute(query)
+
         if self.check_table_exist('cdn_dns_logs_%s' % year_month):
             cur = self.logs.cursor()
             query = 'delete from cdn_dns_logs_%s where date = "%s" and hour = %s;' % (year_month, date, hour)
