@@ -38,8 +38,8 @@ def start():
         while(True):
             # print(now)
             # every 5 mins
-            # if end_time_main <= now:
-            if (True):
+            if end_time_main <= now:
+            # if (True):
                 main_job = threading.Thread(target=job_nginx_main(start_time_main, end_time_main))
                 main_job.start()
                 main_dns_job = threading.Thread(target=job_dns_main(start_time_main, end_time_main))
@@ -277,11 +277,11 @@ def job_dns_main(start_time, end_time):
                     id = current_dns_ip_list[ip][query_domain]
                     db.update_dns_query_record(start_time.strftime('%Y%m'), str(count), id)
                     write_app_log('[DNS-IP] %s update: %s[%s] with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(count)))
-                    print("update", domain, count)
+                    # print("update", domain, count)
                 else:
                     db.insert_dns_query_record(start_time.strftime('%Y%m'), ip, domain, query_domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(count))
                     write_app_log('[DNS-IP] %s insert: %s with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, str(count)))
-                    print("insert", domain, count)
+                    # print("insert", domain, count)
             else:
                 write_app_log('[DNS-IP] %s is not registered in database.\n' % (query_domain))
                 print('[DNS-IP] %s is not registered in database.\n' % (query_domain))
