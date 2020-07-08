@@ -1,4 +1,5 @@
-import configparser, datetime
+import configparser, datetime, requests
+from datetime import datetime
 
 
 def write_log(dest, text):
@@ -23,6 +24,42 @@ def get_pid():
     with open('pid.log', 'r') as f:
         if iter(f):
             return next(f)
+
+def get_watcher():
+    conf = configparser.ConfigParser()
+    conf.read('conf.ini')
+    return int(conf['watcher']['cdn_limit'])
+
+def mailSupport(mail_title, content):
+    conf = configparser.ConfigParser()
+    conf.read('conf.ini')
+
+    headers = {"Content-Type": "application/json", "charset": "utf-8"}
+    body = '{"mailer_target": "%s","mailer_subject": "落地點請求異常警報", "mailer_title": "%s", "mailer_content": "%s"}' % (conf['watcher']['mail_target'], mail_title, content)
+    body = body.encode('utf-8')
+    response = requests.post('https://api.nicecun.com/api/v1/send-email', headers=headers, data=body)
+    if response.status_code == 201:
+        print('Email alert sent.')
+        write_app_log("%s [Watcher] email alert sent - %s\n" % mail_title)
+    else:
+        print('Email alert error!!!')
+        error_response = response.content
+        print(error_response)
+        write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n' + 'Email Alert Error!!! \n' + error_response + '\n')
+
+def wachter_alert_cdn(datetime, domain):
+    headers = {"Content-Type": "application/json", "charset": "utf-8"}
+    body = '{"overused_domains": [%s]}' % domain
+    print(body)
+    response = requests.post('https://api.nicecun.com/api/v1/switch-security-cdn', headers=headers, data=body)
+    if response.status_code == 200:
+        print('Watcher alert CDN')
+        write_app_log("%s [Watcher] alert CDN - %s\n" % (datetime, domain))
+    else:
+        print('Watcher alert Error!!!')
+        error_response = response.content
+        print(error_response)
+        write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n' + '[Watcher] alert CDN Error!!! \n' + error_response + '\n')
 
 def search_query_belong(type, db, data):
     domain = ''

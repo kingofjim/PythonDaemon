@@ -16,7 +16,7 @@ class Elasticsearch:
 
 
         body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword","size": 999999999},"aggs":{"body_bytes_sent":{"sum":{"field":"body_bytes_sent"}}}}}}'
-        write_app_log("Main - Elasticsearch: %s\n" % body)
+        print("Main - Elasticsearch: %s" % body)
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
         if(response.status_code == 200):
@@ -60,7 +60,7 @@ class Elasticsearch:
 
     def search_status_distribution(self, period):
         body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"' + period[0] + '","lt":"' + period[1] + '"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword","size":999999999},"aggs":{"status":{"terms":{"size":999999999,"field":"status.keyword"}}}}}}'
-        write_app_log("Side - Elasticsearch status: %s\n" % body)
+        print("Side - Elasticsearch status: %s" % body)
         # print(body)
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
@@ -88,7 +88,7 @@ class Elasticsearch:
     def search_dns_query_by_domains(self, period):
 
         body = '{"aggs":{"2":{"terms":{"field":"query_value.keyword","order":{"_count":"desc"},"size":9999999}}},"size":0,"_source":{"excludes":[]},"stored_fields":["*"],"script_fields":{},"docvalue_fields":[{"field":"@timestamp","format":"date_time"}],"query":{"bool":{"must":[],"filter":[{"match_all":{}},{"range":{"@timestamp":{"format":"strict_date_optional_time","gte":"%s","lt":"%s"}}}],"should":[],"must_not":[]}}}' % (period[0], period[1])
-        write_app_log("Main - Elasticsearch: %s\n" % body)
+        print("Main - Elasticsearch: %s" % body)
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-dns-*/_search/', auth=self.credentials, headers=self.headers, data=body)
         if response.status_code == 200:
@@ -110,7 +110,7 @@ class Elasticsearch:
 
     def search_dns_query_by_ip(self, period):
         body = '{"aggs":{"2":{"terms":{"field":"client_ip.keyword","order":{"_count":"desc"},"size":9999999,"min_doc_count":100},"aggs":{"3":{"terms":{"field":"query_value.keyword","order":{"_count":"desc"},"size":999999}}}}},"size":0,"_source":{"excludes":[]},"stored_fields":["*"],"script_fields":{},"docvalue_fields":[{"field":"@timestamp","format":"date_time"}],"query":{"bool":{"must":[],"filter":[{"match_all":{}},{"range":{"@timestamp":{"format":"strict_date_optional_time","gte":"%s","lt":"%s"}}}],"should":[],"must_not":[]}}}' % (period[0], period[1])
-        write_app_log("Main - Elasticsearch: %s\n" % body)
+        print("Main - Elasticsearch: %s" % body)
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-dns-*/_search/', auth=self.credentials, headers=self.headers, data=body)
         if response.status_code == 200:
