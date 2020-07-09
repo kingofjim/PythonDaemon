@@ -135,8 +135,7 @@ def job_nginx_main(start_time, end_time):
             print('%s is not registered in database.\n' % (query_domain))
 
     overused_domain = {}
-
-    if nginx_last_result:
+    if conf['watcher']['enable'] == 'True' and nginx_last_result:
         valve_multiplier = int(conf['watcher']['cdn_request_valve_multiplier'])
         valve = int(conf['watcher']['cdn_request_valve'])
         for domain, val in update_data.items():
