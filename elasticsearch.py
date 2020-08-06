@@ -14,11 +14,11 @@ class Elasticsearch:
 
     def search_sendbtye_by_domains(self, period):
         body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword","size": 999999999},"aggs":{"body_bytes_sent":{"sum":{"field":"body_bytes_sent"}}}}}}'
-        print("[Web] search_sendbtye_by_domains - body: %s" % body)
+        print("[Web-Main] search_sendbtye_by_domains - body: %s" % body)
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-proxy-*/_search', auth=self.credentials, headers=self.headers, data=body)
         if(response.status_code == 200):
-            print(response.text)
+            # print(response.text)
             response = response.json()
             shards = response['_shards']
             if shards['total'] != shards['total']:
@@ -119,7 +119,7 @@ class Elasticsearch:
                 write_error_log('ERROR!!! %s ~ %s DNS-IP job shards failed\n' % (period[0], period[1]))
                 raise Exception('ERROR!!! %s ~ %s DNS-IP job shards failed' % (period[0], period[1]))
             response_bucket = response['aggregations']['2']['buckets']
-            print(response_bucket)
+            # print(response_bucket)
 
             if response_bucket:
                 result = {}

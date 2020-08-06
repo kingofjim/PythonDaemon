@@ -37,7 +37,7 @@ def mailSupport(mail_title, content):
     headers = {"Content-Type": "application/json", "charset": "utf-8"}
     body = '{"mailer_target": "%s","mailer_subject": "落地點請求異常警報", "mailer_title": "%s", "mailer_content": "%s"}' % (conf['watcher']['mail_target'], mail_title, content)
     body = body.encode('utf-8')
-    response = requests.post('https://api.nicecun.com/api/v1/send-email', headers=headers, data=body)
+    response = requests.post(conf['watcher']['mail_api'], headers=headers, data=body)
     if response.status_code == 201:
         print('Email alert sent.')
         write_app_log("%s [Watcher] email alert sent - %s\n" % mail_title)

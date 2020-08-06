@@ -7,9 +7,6 @@ from datetime import datetime, timedelta
 import threading
 from elasticsearch import Elasticsearch
 
-nginx_last_result = {}
-# nginx_last_result = {'tengine.354785.com': [1, 48497.0]}
-
 def start():
     # db = Database()
     # print(db.create_tale('web', '202005'))
@@ -25,6 +22,7 @@ def start():
     start_time_side = now.replace(minute=0, second=0, microsecond=0)
     end_time_side = now.replace(minute=0, second=0, microsecond=0)
     end_time_side = end_time_side + timedelta(hours=1)
+    # print(start_time_side)
     # print(end_time_side)
     # exit()
     # end_time_side + timedelta(minutes=1)
@@ -36,7 +34,7 @@ def start():
 
     try:
         while(True):
-            # print(now)
+            print(now)
             # every 5 mins
             if end_time_main <= now:
             # if (True):
@@ -49,14 +47,20 @@ def start():
                 end_time_main = end_time_main + timedelta(minutes=5)
                 if (start_time_main.hour != end_time_main.hour):
                     end_time_main = end_time_main.replace(minute=0, second=0, microsecond=0)
+                main_job.join()
+                main_dns_job.join()
             # every 1 hour
             if end_time_side <= now:
             # if(True):
                 side_job = threading.Thread(target=job_nginx_side(start_time_side, end_time_side))
                 side_job.start()
+                watcher_job = threading.Thread(target=watcher(start_time_side, True))
+                watcher_job.start()
                 start_time_side = end_time_side
                 end_time_side = end_time_side + timedelta(hours=1)
-            time.sleep(10)
+                side_job.join()
+                watcher_job.join()
+            time.sleep((end_time_main - datetime.now()).seconds +2)
             now = datetime.now()
     except KeyboardInterrupt:
         pass
@@ -82,7 +86,7 @@ def kill():
     os.popen('kill '+ pid).read().strip()
 
 def job_nginx_main(start_time, end_time):
-    global nginx_last_result
+    job_start_time = datetime.now()
 
     db = Database()
     start_time_utc = start_time - timedelta(hours=8)
@@ -92,6 +96,7 @@ def job_nginx_main(start_time, end_time):
 
     conf = configparser.ConfigParser()
     conf.read('conf.ini')
+
     if conf['app']['force_input_ol_domains'] == 'True':
         # force input OL data for testing
         cdn_domains = ['leacloud.net','qnvtang.com','leacloud.com','reachvpn.com','jetstartech.com','wqlyjy.cn','lea.cloud','jtechcloud.com','leaidc.com','ahskzs.cn','tjwohuite.com','www.ttt.com','hbajhw.com','tjflsk.com','anjuxinxi.com','test.leacloud.net','tongxueqn.com','*.unnychina.com','*.atpython.com','*.daguosz.com','*.cfbaoche.com','*.baliangxian.com','*.yunyishihu.com','*.clwdfhw.com','*.hnstrcyj.com','www.lanshengyoupin.com','www.chinaynt.com','www.pcgame198.com','www.pintusx.com','www.frzhibo.com','www.nanjingcaishui.com','www.shsxmygs.com','www.jsonencode.com','www.xgmgnz.com','www.sinceidc.com','www.njyymzp.com','www.rikimrobot.com','www.mifeiwangluo.com','www.lvqqtt.com','www.wuhanbsz.com','www.xueqiusj.com','www.queqiaocloud.com','www.jiajiaoshiting.com','www.laotsai.com','www.daoliuliang365.com','www.dazhougongjiao.com','www.hndingkun.com','www.liangct.com','www.amandacasa.com','www.ruiyoushouyou.com','www.yychaoli.com','www.allcureglobal.com','www.whrenatj.com','yidaaaa.com','lea.hncgw.cn','webld.cqgame.games','test12345.tongxueqn.com','cc.kkk222.com','cdn.2019wsd.com','webh5ld.cqgame.cc','vip77759.com','tggame.topgame6.com','*.jcxfdc.cn','*.mrqzs.cn','*.dlswl.cn','*.0oiser.club','*.greenpay.xyz','*.greentrad.net','*.greenpay.vip','www.youxizaixian100.com','yilongth.com','weidichuxing.com','dianwankeji.com','haiyunpush.com','qushiyunmei.com']
@@ -104,8 +109,8 @@ def job_nginx_main(start_time, end_time):
     print("Main - not_cdn_domains:", not_cdn_domains)
 
     period = [start_time_utc.strftime('%Y-%m-%dT%H:%M:%S'), end_time_utc.strftime('%Y-%m-%dT%H:%M:%S')]
-    print("[Nginx] Main - period:", period)
-    # period = ['2020-07-05T00:00:00', '2020-07-05T00:05:00']
+    print("[Web-Main] period:", period)
+    # period = ['2020-08-04T07:00:00', '2020-08-04T07:05:00']
 
     elastic = Elasticsearch()
     update_list = elastic.search_sendbtye_by_domains(period=period)
@@ -134,41 +139,13 @@ def job_nginx_main(start_time, end_time):
         else:
             print('%s is not registered in database.\n' % (query_domain))
 
-    overused_domain = {}
-    if conf['watcher']['enable'] == 'True' and nginx_last_result:
-        valve_multiplier = int(conf['watcher']['cdn_request_valve_multiplier'])
-        valve = int(conf['watcher']['cdn_request_valve'])
-        for domain, val in update_data.items():
-            if domain in nginx_last_result:
-                if val[0] > valve:
-                    last_result = nginx_last_result[domain][0] * valve_multiplier
-                    if val[0] > last_result:
-                        overused_domain[domain] = val[0]
-        if overused_domain:
-            mail_content = ''
-            alert_content = ''
-            for domain, val in overused_domain.items():
-                mail_content += '%s: %s<br>' % (domain, val)
-                alert_content += '"%s",' % domain
-                alert_content += '"%s",' % domain
-            alert_content = alert_content[:-1]
-            try:
-                mailSupport(start_time.strftime('%Y-%m-%d %H:%M:%S'), mail_content)
-            except Exception as e:
-                write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
-
-            try:
-                wachter_alert_cdn(start_time.strftime('%Y-%m-%d %H:%M:%S'), alert_content)
-            except Exception as e:
-                write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
-
-    nginx_last_result = update_data
-
     db.close()
+    print("[Web-Main] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
 
 def job_nginx_side(start_time, end_time):
     # start_time = datetime(2020, 4, 23, 18)
     # end_time = ''
+    job_start_time = datetime.now()
     db = Database()
     db.update_web_bandwidth(start_time.strftime('%Y%m'), end_time.strftime('%Y-%m-%d'), end_time.hour)
     write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') +' bandwidth updated\n')
@@ -177,11 +154,9 @@ def job_nginx_side(start_time, end_time):
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
     period = [start_time_utc.strftime('%Y-%m-%dT%H:%M:%S'), end_time_utc.strftime('%Y-%m-%dT%H:%M:%S')]
-    print("[Nginx] Side - period:", period)
+    print("[Web-Side] period:", period)
     # -- city count --
     dis_data = els.search_city_count_distribution(period)
-    # print(dis_data)
-    # exit()
 
     conf = configparser.ConfigParser()
     conf.read('conf.ini')
@@ -199,7 +174,7 @@ def job_nginx_side(start_time, end_time):
         for country, city_data in country_data.items():
             for city, count in city_data.items():
                 query_val += '("%s","%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, country, city, count)
-                write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' [nginx distribution] insert: %s status:%s count:%s\n' % (domain, city, count))
+                write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' [Web distribution] insert: %s status:%s count:%s\n' % (domain, city, count))
     query_val = query_val[:-1]
     if query_val:
         db.insert_web_dist(start_time.strftime('%Y%m'), query_val)
@@ -211,12 +186,13 @@ def job_nginx_side(start_time, end_time):
         domain = determin_domain(domain, cdn_domains, not_cdn_domains)
         for status, count in status_data.items():
             query_val += '("%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, status, count)
-            write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' [nginx status] insert: %s status:%s count:%s\n' % (domain, status, count))
+            write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' [Web status] insert: %s status:%s count:%s\n' % (domain, status, count))
     query_val = query_val[:-1]
     if query_val:
         db.insert_status_dist(start_time.strftime('%Y%m'), query_val)
 
     db.close()
+    print("[Web-Side] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
 
 def job_dns_main(start_time, end_time):
     job_start_time = datetime.now()
@@ -236,7 +212,7 @@ def job_dns_main(start_time, end_time):
         not_cdn_domains = db.get_not_cdn_domains()
 
     period = [start_time_utc.strftime('%Y-%m-%dT%H:%M:%S'), end_time_utc.strftime('%Y-%m-%dT%H:%M:%S')]
-    print("[DNS] Main - period:", period)
+    print("[DNS-Main] period:", period)
     # period = ['2020-06-17T08:20:00', '2020-06-17T08:25:00']
 
     elastic = Elasticsearch()
@@ -288,6 +264,50 @@ def job_dns_main(start_time, end_time):
     print("[DNS-IP] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
     db.close()
 
+def watcher(job_time, enable=False):
+    if enable:
+        conf = configparser.ConfigParser()
+        conf.read('conf.ini')
+        request_threshold = int(conf['watcher']['cdn_request_threshold'])
+        traffic_threshold = int(conf['watcher']['cdn_traffic_threshold'])
+
+        if enable and conf['watcher']['enable'] == 'True' and request_threshold and traffic_threshold:
+            enable = True
+        else:
+            enable = False
+
+        if enable:
+            print("%s [Watcher] Start]" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            db = Database()
+            job_time_last_hour = job_time-timedelta(hours=1)
+            job_time_last_hour = datetime.strptime('2020-08-04 14:00:00', '%Y-%m-%d %H:%M:%S')
+            job_time = datetime.strptime('2020-08-04 15:00:00', '%Y-%m-%d %H:%M:%S')
+            overused_domain = db.get_cdn_overused(job_time_last_hour, job_time, request_threshold, traffic_threshold)
+            db.close()
+
+            if overused_domain:
+                mail_content = ''
+                alert_content = ''
+                for data in overused_domain:
+                    domain = data[0]
+                    last_count = data[1]
+                    count = data[2]
+                    last_sendbyte = data[3]
+                    sendbyte = data[4]
+                    mail_content += '%s:<br>&nbsp;&nbsp; Request(次) %s => %s<br>&nbsp;&nbsp; Traffic(byte) %s => %s <br>' % (domain, last_count, count, last_sendbyte, sendbyte)
+                    alert_content += '"%s",' % domain
+                alert_content = alert_content[:-1]
+                try:
+                    mail_title = "%s ~ %s" % (job_time_last_hour.strftime('%Y-%m-%d %H:%M:%S'), job_time.strftime('%Y-%m-%d %H:%M:%S'))
+                    mailSupport(mail_title, mail_content)
+                except Exception as e:
+                    write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
+
+                try:
+                    wachter_alert_cdn(job_time.strftime('%Y-%m-%d %H:%M:%S'), alert_content)
+                except Exception as e:
+                    write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
+
 def update_period(p1, p2):
     print("Start update period %s ~ %s" % (p1, p2))
     start_time = datetime.now()
@@ -307,7 +327,7 @@ def update_period(p1, p2):
         job_dns_main(period[0], period[1])
 
     print("%s Completed update period" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-    print("update_period %s ~ %s took %s second(s)" % (p1, p2, (start_time - datetime.now()).total_seconds()))
+    print("update_period %s ~ %s took %s second(s)" % (p1, p2, (datetime.now() - start_time).total_seconds()))
 
 if(len(sys.argv) > 1):
     if sys.argv[1] == 'update_period':

@@ -32,7 +32,7 @@ class Converter:
         domain = search_query_belong(self.data['mt'], self.db, self.data)
 
         if self.debug:
-            print("[Nginx] query: ", self.data['query'])
+            print("[Web] query: ", self.data['query'])
             print("dest: ", domain)
 
         dt = datetime.datetime.fromtimestamp(self.data['ts'])
