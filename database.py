@@ -95,7 +95,6 @@ class Database:
         cur.execute(query)
         result = {}
         for data in cur.fetchall():
-            print(result, data)
             if data[1] in result:
                 result[data[1]][data[2]] = data[0]
             else:
@@ -106,7 +105,7 @@ class Database:
         if self.check_table_exist('cdn_web_logs_%s' % year_month):
             cur = self.logs.cursor()
             query = 'update cdn_web_logs_%s set bandwidth = sendbyte/3600 where bandwidth = 0 and sendbyte != 0 and not (date="%s" and hour=%s);' % (year_month, now_date, now_hour)
-            print(query)
+            # print(query)
             cur.execute(query)
             self.logs.commit()
 
@@ -117,7 +116,7 @@ class Database:
 
         cur = self.logs.cursor()
         query = 'insert into cdn_web_distribution_logs_%s (domain, date, hour, country, city, count) value %s;' % (year_month, data)
-        print(query)
+        # print(query)
         # exit()
         cur.execute(query)
         self.logs.commit()
@@ -129,7 +128,7 @@ class Database:
 
         cur = self.logs.cursor()
         query = 'insert into cdn_web_status_logs_%s (domain, date, hour, status, count) value %s;' % (year_month, data)
-        print(query)
+        # print(query)
         # exit()
         cur.execute(query)
         self.logs.commit()

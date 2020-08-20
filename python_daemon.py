@@ -87,7 +87,7 @@ def kill():
 
 def job_nginx_main(start_time, end_time):
     job_start_time = datetime.now()
-
+    print("%s [Web-Main] Job Start" % job_start_time.strftime('%Y-%m-%d %H:%M:%S'))
     db = Database()
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
@@ -110,42 +110,45 @@ def job_nginx_main(start_time, end_time):
 
     period = [start_time_utc.strftime('%Y-%m-%dT%H:%M:%S'), end_time_utc.strftime('%Y-%m-%dT%H:%M:%S')]
     print("[Web-Main] period:", period)
-    # period = ['2020-08-04T07:00:00', '2020-08-04T07:05:00']
+    # period = ['2020-02-04T07:00:00', '2020-02-04T07:05:00']
 
     elastic = Elasticsearch()
     update_list = elastic.search_sendbtye_by_domains(period=period)
 
-    update_data = {}
-    for query_domain, val in update_list.items():
-        domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
-        # print(query_domain, "=>", domain)
-        if(domain):
-            if (domain in current_web_list):
-                id = current_web_list[domain]
-                db.update_web_record(start_time.strftime('%Y%m'), str(int(val[1])), str(val[0]), id)
-                write_app_log('%s [CDN] update: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(int(val[1])), str(val[0])))
-                # print("update", domain, val)
-            else:
-                id = db.insert_web_record(start_time.strftime('%Y%m'), domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(int(val[1])), str(val[0]))
-                current_web_list[domain] = id
-                write_app_log('%s [CDN] insert: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(int(val[1])), str(val[0])))
-                # print("insert", domain, val)
+    if update_list:
+        update_data = {}
+        for query_domain, val in update_list.items():
+            domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
+            # print(query_domain, "=>", domain)
+            if(domain):
+                if (domain in current_web_list):
+                    id = current_web_list[domain]
+                    db.update_web_record(start_time.strftime('%Y%m'), str(int(val[1])), str(val[0]), id)
+                    write_app_log('%s [CDN] update: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(int(val[1])), str(val[0])))
+                    # print("update", domain, val)
+                else:
+                    id = db.insert_web_record(start_time.strftime('%Y%m'), domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(int(val[1])), str(val[0]))
+                    current_web_list[domain] = id
+                    write_app_log('%s [CDN] insert: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(int(val[1])), str(val[0])))
+                    # print("insert", domain, val)
 
-            if domain in update_data:
-                update_data[domain][0] += val[0]
-                update_data[domain][1] += val[1]
+                if domain in update_data:
+                    update_data[domain][0] += val[0]
+                    update_data[domain][1] += val[1]
+                else:
+                    update_data[domain] = update_list[query_domain]
             else:
-                update_data[domain] = update_list[query_domain]
-        else:
-            print('%s is not registered in database.\n' % (query_domain))
+                print('%s is not registered in database.\n' % (query_domain))
+    else:
+        print("[Web] %s ELK result empty" % start_time.strftime('%Y-%m-%dT%H:%M:%S'))
+        mailSupport("ELK查詢空值", "job_nginx_main %s ~ %s" % (start_time.strftime('%Y-%m-%dT%H:%M:%S'), end_time.strftime('%Y-%m-%dT%H:%M:%S')))
 
     db.close()
     print("[Web-Main] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
 
 def job_nginx_side(start_time, end_time):
-    # start_time = datetime(2020, 4, 23, 18)
-    # end_time = ''
     job_start_time = datetime.now()
+    print("%s [Web-Side] Job Start" % job_start_time.strftime('%Y-%m-%d %H:%M:%S'))
     db = Database()
     db.update_web_bandwidth(start_time.strftime('%Y%m'), end_time.strftime('%Y-%m-%d'), end_time.hour)
     write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') +' bandwidth updated\n')
@@ -196,6 +199,7 @@ def job_nginx_side(start_time, end_time):
 
 def job_dns_main(start_time, end_time):
     job_start_time = datetime.now()
+    print("%s [Web-Main] Job Start" % job_start_time.strftime('%Y-%m-%d %H:%M:%S'))
     db = Database()
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
@@ -218,22 +222,26 @@ def job_dns_main(start_time, end_time):
     elastic = Elasticsearch()
     update_list = elastic.search_dns_query_by_domains(period=period)
 
-    for query_domain, val in update_list.items():
-        domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
-        # print(query_domain, "=> ", domain)
-        if (domain):
-            if (domain in current_dns_list):
-                id = current_dns_list[domain]
-                db.update_dns_record(start_time.strftime('%Y%m'), str(val), id)
-                write_app_log('%s [DNS] update: %s[%s] with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(val)))
-                # print("update", domain, val)
+    if update_list:
+        for query_domain, val in update_list.items():
+            domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
+            # print(query_domain, "=> ", domain)
+            if (domain):
+                if (domain in current_dns_list):
+                    id = current_dns_list[domain]
+                    db.update_dns_record(start_time.strftime('%Y%m'), str(val), id)
+                    write_app_log('%s [DNS] update: %s[%s] with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(val)))
+                    # print("update", domain, val)
+                else:
+                    db.insert_dns_record(start_time.strftime('%Y%m'), domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(val))
+                    write_app_log('%s [DNS] insert: %s with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, str(val)))
+                    # print("insert", domain, val)
             else:
-                db.insert_dns_record(start_time.strftime('%Y%m'), domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(val))
-                write_app_log('%s [DNS] insert: %s with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, str(val)))
-                # print("insert", domain, val)
-        else:
-            print('[DNS] %s is not registered in database.\n' % (query_domain))
-    db.logs.commit()
+                print('[DNS] %s is not registered in database.\n' % (query_domain))
+        db.logs.commit()
+    else:
+        print("[DNS] %s ELK result empty" % start_time.strftime('%Y-%m-%dT%H:%M:%S'))
+        mailSupport("ELK查詢空值", "job_dns_main %s ~ %s" % (start_time.strftime('%Y-%m-%dT%H:%M:%S'), end_time.strftime('%Y-%m-%dT%H:%M:%S')))
 
     print("[DNS] Time spend %s" % (datetime.now()-job_start_time).total_seconds())
 

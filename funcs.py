@@ -35,12 +35,12 @@ def mailSupport(mail_title, content):
     conf.read('conf.ini')
 
     headers = {"Content-Type": "application/json", "charset": "utf-8"}
-    body = '{"mailer_target": "%s","mailer_subject": "落地點請求異常警報", "mailer_title": "%s", "mailer_content": "%s"}' % (conf['watcher']['mail_target'], mail_title, content)
+    body = '{"mailer_target": "%s","mailer_subject": "PythonDaemon異常警報", "mailer_title": "%s", "mailer_content": "%s"}' % (conf['watcher']['mail_target'], mail_title, content)
     body = body.encode('utf-8')
     response = requests.post(conf['watcher']['mail_api'], headers=headers, data=body)
     if response.status_code == 201:
         print('Email alert sent.')
-        write_app_log("%s [Watcher] email alert sent - %s\n" % mail_title)
+        write_app_log("%s [Mail] Email Alert Sent - %s\n" % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), mail_title))
     else:
         print('Email alert error!!!')
         error_response = response.content

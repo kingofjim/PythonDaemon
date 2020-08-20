@@ -86,7 +86,7 @@ class Elasticsearch:
     def search_dns_query_by_domains(self, period):
 
         body = '{"aggs":{"2":{"terms":{"field":"query_value.keyword","order":{"_count":"desc"},"size":9999999}}},"size":0,"_source":{"excludes":[]},"stored_fields":["*"],"script_fields":{},"docvalue_fields":[{"field":"@timestamp","format":"date_time"}],"query":{"bool":{"must":[],"filter":[{"match_all":{}},{"range":{"@timestamp":{"format":"strict_date_optional_time","gte":"%s","lt":"%s"}}}],"should":[],"must_not":[]}}}' % (period[0], period[1])
-        print("[DNS] search_dns_query_by_domains - body: %s" % body)
+        # print("[DNS] search_dns_query_by_domains - body: %s" % body)
         # exit()
         response = requests.get('http://35.201.180.3:9200/logstash-hqs-cdn-dns-*/_search/', auth=self.credentials, headers=self.headers, data=body)
         if response.status_code == 200:
