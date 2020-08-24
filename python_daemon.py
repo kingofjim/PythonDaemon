@@ -8,13 +8,7 @@ import threading
 from elasticsearch import Elasticsearch
 
 def start():
-    # db = Database()
-    # print(db.create_tale('web', '202005'))
-    # els = Elasticsearch()
-    # period = ("2020-05-03T06:13:15", "2020-05-03T07:13:15")
-
     now = datetime.now()
-    # now = datetime.strptime("2020-05-15T09:59:00", '%Y-%m-%dT%H:%M:%S')
     start_time_main = now
     end_time_main = start_time_main + timedelta(minutes=5)
     if (start_time_main.hour != end_time_main.hour):
@@ -22,10 +16,6 @@ def start():
     start_time_side = now.replace(minute=0, second=0, microsecond=0)
     end_time_side = now.replace(minute=0, second=0, microsecond=0)
     end_time_side = end_time_side + timedelta(hours=1)
-    # print(start_time_side)
-    # print(end_time_side)
-    # exit()
-    # end_time_side + timedelta(minutes=1)
 
     write_app_log('Daemon Start at: ' + now.strftime('%Y-%m-%d %H:%M:%S') + '\n')
     print("start_time:", start_time_main)
@@ -54,13 +44,28 @@ def start():
             # if(True):
                 side_job = threading.Thread(target=job_nginx_side(start_time_side, end_time_side))
                 side_job.start()
-                watcher_job = threading.Thread(target=watcher(start_time_side, True))
-                watcher_job.start()
+
+                conf = configparser.ConfigParser()
+                conf.read('conf.ini')
+                request_threshold = int(conf['watcher']['cdn_request_threshold'])
+                traffic_threshold = int(conf['watcher']['cdn_traffic_threshold'])
+
+                if enable and conf['watcher']['enable'] == 'True' and request_threshold and traffic_threshold:
+                    enable = True
+                else:
+                    enable = False
+
+                if enable:
+                    watcher_job = threading.Thread(target=watcher(start_time_side, request_threshold, traffic_threshold))
+                    watcher_job.start()
+                    watcher_job.join()
+
                 start_time_side = end_time_side
                 end_time_side = end_time_side + timedelta(hours=1)
                 side_job.join()
-                watcher_job.join()
-            time.sleep((end_time_main - datetime.now()).seconds +2)
+            time_sleep = (end_time_main - datetime.now()).seconds + 2
+            print("SLEEP: %s seconds" % time_sleep)
+            time.sleep(time_sleep)
             now = datetime.now()
     except KeyboardInterrupt:
         pass
@@ -110,7 +115,7 @@ def job_nginx_main(start_time, end_time):
 
     period = [start_time_utc.strftime('%Y-%m-%dT%H:%M:%S'), end_time_utc.strftime('%Y-%m-%dT%H:%M:%S')]
     print("[Web-Main] period:", period)
-    # period = ['2020-02-04T07:00:00', '2020-02-04T07:05:00']
+    # period = ['2020-08-24T03:00:00', '2020-08-24T04:00:00']
 
     elastic = Elasticsearch()
     update_list = elastic.search_sendbtye_by_domains(period=period)
@@ -195,7 +200,7 @@ def job_nginx_side(start_time, end_time):
             write_app_log('%s => %s\n' % (query_domain, domain))
             for status, count in status_data.items():
                 query_val += '("%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, status, count)
-                write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' [Web status] insert: %s status:%s count:%s\n' % (domain, status, count))
+                write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' [Web Status] insert: %s status:%s count:%s\n' % (domain, status, count))
         else:
             print('[DNS] %s is not registered in database.\n' % (query_domain))
 
@@ -281,49 +286,37 @@ def job_dns_main(start_time, end_time):
     print("[DNS-IP] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
     db.close()
 
-def watcher(job_time, enable=False):
-    if enable:
-        conf = configparser.ConfigParser()
-        conf.read('conf.ini')
-        request_threshold = int(conf['watcher']['cdn_request_threshold'])
-        traffic_threshold = int(conf['watcher']['cdn_traffic_threshold'])
+def watcher(job_time, request_threshold, traffic_threshold):
+    print("%s [Watcher] Start]" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    write_app_log("%s [Watcher] Start]\n" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-        if enable and conf['watcher']['enable'] == 'True' and request_threshold and traffic_threshold:
-            enable = True
-        else:
-            enable = False
+    db = Database()
+    job_time_last_hour = job_time-timedelta(hours=1)
+    overused_domain = db.get_cdn_overused(job_time_last_hour, job_time, request_threshold, traffic_threshold)
+    db.close()
 
-        if enable:
-            print("%s [Watcher] Start]" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-            db = Database()
-            job_time_last_hour = job_time-timedelta(hours=1)
-            job_time_last_hour = datetime.strptime('2020-08-04 14:00:00', '%Y-%m-%d %H:%M:%S')
-            job_time = datetime.strptime('2020-08-04 15:00:00', '%Y-%m-%d %H:%M:%S')
-            overused_domain = db.get_cdn_overused(job_time_last_hour, job_time, request_threshold, traffic_threshold)
-            db.close()
+    if overused_domain:
+        mail_content = ''
+        alert_content = ''
+        for data in overused_domain:
+            domain = data[0]
+            last_count = data[1]
+            count = data[2]
+            last_sendbyte = data[3]
+            sendbyte = data[4]
+            mail_content += '%s:<br>&nbsp;&nbsp; Request(次) %s => %s<br>&nbsp;&nbsp; Traffic(byte) %s => %s <br>' % (domain, last_count, count, last_sendbyte, sendbyte)
+            alert_content += '"%s",' % domain
+        alert_content = alert_content[:-1]
+        try:
+            mail_title = "%s ~ %s" % (job_time_last_hour.strftime('%Y-%m-%d %H:%M:%S'), job_time.strftime('%Y-%m-%d %H:%M:%S'))
+            mailSupport(mail_title, mail_content)
+        except Exception as e:
+            write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
 
-            if overused_domain:
-                mail_content = ''
-                alert_content = ''
-                for data in overused_domain:
-                    domain = data[0]
-                    last_count = data[1]
-                    count = data[2]
-                    last_sendbyte = data[3]
-                    sendbyte = data[4]
-                    mail_content += '%s:<br>&nbsp;&nbsp; Request(次) %s => %s<br>&nbsp;&nbsp; Traffic(byte) %s => %s <br>' % (domain, last_count, count, last_sendbyte, sendbyte)
-                    alert_content += '"%s",' % domain
-                alert_content = alert_content[:-1]
-                try:
-                    mail_title = "%s ~ %s" % (job_time_last_hour.strftime('%Y-%m-%d %H:%M:%S'), job_time.strftime('%Y-%m-%d %H:%M:%S'))
-                    mailSupport(mail_title, mail_content)
-                except Exception as e:
-                    write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
-
-                try:
-                    wachter_alert_cdn(job_time.strftime('%Y-%m-%d %H:%M:%S'), alert_content)
-                except Exception as e:
-                    write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
+        try:
+            wachter_alert_cdn(job_time.strftime('%Y-%m-%d %H:%M:%S'), alert_content)
+        except Exception as e:
+            write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
 
 def update_period(p1, p2):
     print("Start update period %s ~ %s" % (p1, p2))
