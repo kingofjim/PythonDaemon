@@ -50,12 +50,7 @@ def start():
                 request_threshold = int(conf['watcher']['cdn_request_threshold'])
                 traffic_threshold = int(conf['watcher']['cdn_traffic_threshold'])
 
-                if enable and conf['watcher']['enable'] == 'True' and request_threshold and traffic_threshold:
-                    enable = True
-                else:
-                    enable = False
-
-                if enable:
+                if conf['watcher']['enable'] == 'True' and request_threshold and traffic_threshold:
                     watcher_job = threading.Thread(target=watcher(start_time_side, request_threshold, traffic_threshold))
                     watcher_job.start()
                     watcher_job.join()
