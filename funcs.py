@@ -43,7 +43,7 @@ def mailSupport(mail_title, content):
         write_app_log("%s [Mail] Email Alert Sent - %s\n" % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), mail_title))
     else:
         print('Email alert error!!!')
-        error_response = response.content
+        error_response = response.content.decode("utf-8")
         print(error_response)
         write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n' + 'Email Alert Error!!! \n' + error_response + '\n')
 
