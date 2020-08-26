@@ -181,12 +181,14 @@ def job_nginx_side(start_time, end_time):
                     query_val += '("%s","%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, country, city, count)
                     write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' [Web distribution] insert: %s status:%s count:%s\n' % (domain, city, count))
         else:
-            print('[DNS] %s is not registered in database.\n' % (query_domain))
+            print('[Web-Side] %s is not registered in database.\n' % (query_domain))
     query_val = query_val[:-1]
     if query_val:
         db.insert_web_dist(start_time.strftime('%Y%m'), query_val)
+    print("[Web-Side] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
 
     # -- status --
+    job_start_time = datetime.now()
     elk_status_data = els.search_status_distribution(period)
     query_val = ''
     for query_domain, status_data in elk_status_data.items():
@@ -197,14 +199,14 @@ def job_nginx_side(start_time, end_time):
                 query_val += '("%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, status, count)
                 write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' [Web Status] insert: %s status:%s count:%s\n' % (domain, status, count))
         else:
-            print('[DNS] %s is not registered in database.\n' % (query_domain))
+            print('[Web-Status] %s is not registered in database.\n' % (query_domain))
 
     query_val = query_val[:-1]
     if query_val:
         db.insert_status_dist(start_time.strftime('%Y%m'), query_val)
 
     db.close()
-    print("[Web-Side] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
+    print("[Web-Status] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
 
 def job_dns_main(start_time, end_time):
     job_start_time = datetime.now()
@@ -246,13 +248,13 @@ def job_dns_main(start_time, end_time):
                     write_app_log('%s [DNS] insert: %s with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, str(val)))
                     # print("insert", domain, val)
             else:
-                print('[DNS] %s is not registered in database.\n' % (query_domain))
+                print('[DNS-Main] %s is not registered in database.\n' % (query_domain))
         db.logs.commit()
     else:
-        print("[DNS] %s ELK result empty" % start_time.strftime('%Y-%m-%dT%H:%M:%S'))
+        print("[DNS-Main] %s ELK result empty" % start_time.strftime('%Y-%m-%dT%H:%M:%S'))
         mailSupport("ELK查詢空值", "job_dns_main %s ~ %s" % (start_time.strftime('%Y-%m-%dT%H:%M:%S'), end_time.strftime('%Y-%m-%dT%H:%M:%S')))
 
-    print("[DNS] Time spend %s" % (datetime.now()-job_start_time).total_seconds())
+    print("[DNS-Main] Time spend %s" % (datetime.now()-job_start_time).total_seconds())
 
     job_start_time = datetime.now()
     current_dns_ip_list = db.get_current_dns_query_record(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)

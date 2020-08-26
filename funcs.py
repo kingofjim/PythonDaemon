@@ -37,29 +37,36 @@ def mailSupport(mail_title, content):
     headers = {"Content-Type": "application/json", "charset": "utf-8"}
     body = '{"mailer_target": "%s","mailer_subject": "PythonDaemon異常警報", "mailer_title": "%s", "mailer_content": "%s"}' % (conf['watcher']['mail_target'], mail_title, content)
     body = body.encode('utf-8')
-    response = requests.post(conf['watcher']['mail_api'], headers=headers, data=body)
-    if response.status_code == 201:
-        print('Email alert sent.')
-        write_app_log("%s [Mail] Email Alert Sent - %s\n" % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), mail_title))
-    else:
-        print('Email alert error!!!')
-        error_response = response.content.decode("utf-8")
-        print(error_response)
-        write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n' + 'Email Alert Error!!! \n' + error_response + '\n')
+    try:
+        response = requests.post(conf['watcher']['mail_api'], headers=headers, data=body)
+
+        if response.status_code == 201:
+            print('Email alert sent.')
+            write_app_log("%s [Mail] Email Alert Sent - %s\n" % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), mail_title))
+        else:
+            print('Email alert error!!!')
+            error_response = response.content.decode("utf-8")
+            print(error_response)
+            write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n' + 'Email Alert Error!!! \n' + error_response + '\n')
+    except Exception as e:
+        write_app_log(e + "\n")
 
 def wachter_alert_cdn(datetime, domain):
     headers = {"Content-Type": "application/json", "charset": "utf-8"}
     body = '{"overused_domains": [%s]}' % domain
-    print(body)
-    response = requests.post('https://api.nicecun.com/api/v1/switch-security-cdn', headers=headers, data=body)
-    if response.status_code == 200:
-        print('Watcher alert CDN')
-        write_app_log("%s [Watcher] alert CDN - %s\n" % (datetime, domain))
-    else:
-        print('Watcher alert Error!!!')
-        error_response = response.content
-        print(error_response)
-        write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n' + '[Watcher] alert CDN Error!!! \n' + error_response + '\n')
+    try:
+        response = requests.post('https://api.nicecun.com/api/v1/switch-security-cdn', headers=headers, data=body)
+
+        if response.status_code == 200:
+            print('Watcher alert CDN')
+            write_app_log("%s [Watcher] alert CDN - %s\n" % (datetime, domain))
+        else:
+            print('Watcher alert Error!!!')
+            error_response = response.content
+            print(error_response)
+            write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n' + '[Watcher] alert CDN Error!!! \n' + error_response + '\n')
+    except Exception as e:
+        write_app_log(e + "\n")
 
 def search_query_belong(type, db, data):
     domain = ''
