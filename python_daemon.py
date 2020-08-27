@@ -79,7 +79,7 @@ def start():
                 main_job.join()
                 main_dns_job.join()
 
-            time.sleep(3600)
+            time.sleep(60)
             now = datetime.now()
     except KeyboardInterrupt:
         pass
