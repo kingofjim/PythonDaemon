@@ -29,12 +29,16 @@ class Database:
         self.logs.commit()
         return cur.lastrowid
 
-    def update_web_record(self, month_year, sendbyte, count, id):
+    def update_web_record(self, month_year, sendbyte, count, id, force=False):
         cur = self.logs.cursor()
-        query = 'update cdn_web_logs_%s set sendbyte = sendbyte + %s, count = count+ %s where id=%s' % (month_year, sendbyte, count, id)
+        if force:
+            query = 'update cdn_web_logs_%s set sendbyte = %s, count = %s, bandwidth= %s/3600 where id=%s' % (month_year, sendbyte, count, sendbyte, id)
+        else:
+            query = 'update cdn_web_logs_%s set sendbyte = sendbyte + %s, count = count+ %s where id=%s' % (month_year, sendbyte, count, id)
         # print(query)
         cur.execute(query)
         self.logs.commit()
+        return cur.lastrowid
 
     def insert_dns_record(self, year_month, domain, date, hour, count):
         cur = self.logs.cursor()
@@ -42,7 +46,7 @@ class Database:
         # print(query)
         cur.execute(query)
         # self.logs.commit()
-        # return cur.lastrowid
+        return cur.lastrowid
 
     def insert_dns_query_record(self, year_month, ip, domain, query, date, hour, count):
         cur = self.logs.cursor()
@@ -52,9 +56,12 @@ class Database:
         # self.logs.commit()
         # return cur.lastrowid
 
-    def update_dns_record(self, month_year, count, id):
+    def update_dns_record(self, month_year, count, id, force=False):
         cur = self.logs.cursor()
-        query = 'update cdn_dns_logs_%s set count = count+ %s where id=%s' % (month_year, count, id)
+        if force:
+            query = 'update cdn_dns_logs_%s set count = %s where id=%s' % (month_year, count, id)
+        else:
+            query = 'update cdn_dns_logs_%s set count = count+ %s where id=%s' % (month_year, count, id)
         # print(query)
         cur.execute(query)
 
@@ -64,26 +71,26 @@ class Database:
         # print(query)
         cur.execute(query)
 
-    def get_current_hour_web_record(self, year_month, date, hour):
+    def get_cdn_web_logs(self, year_month, date, hour):
         if not self.check_table_exist('cdn_web_logs_%s' % year_month):
             self.create_tale('web', year_month)
             write_app_log('%s new table cdn_web_logs_%s created \n' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), year_month))
             return {}
 
         cur = self.logs.cursor()
-        query = 'select id, domain from cdn_web_logs_%s where date="%s" and hour=%s;' % (year_month, date, hour)
+        query = 'select domain, id, sendbyte, count from cdn_web_logs_%s where date="%s" and hour=%s;' % (year_month, date, hour)
         cur.execute(query)
-        return {x[1]:x[0] for x in cur.fetchall()}
+        return {x[0]: {"id": x[1], "sendbyte": x[2], "count": x[3]} for x in cur.fetchall()}
 
-    def get_current_dns_record(self, year_month, date, hour):
+    def get_dns_logs(self, year_month, date, hour):
         if not self.check_table_exist('cdn_dns_logs_%s' % year_month):
             self.create_tale('dns', year_month)
             write_app_log('%s new table cdn_dns_logs_%s created \n' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), year_month))
             return {}
         cur = self.logs.cursor()
-        query = 'select id, domain from cdn_dns_logs_%s where date="%s" and hour=%s;' % (year_month, date, hour)
+        query = 'select domain, id, count from cdn_dns_logs_%s where date="%s" and hour=%s;' % (year_month, date, hour)
         cur.execute(query)
-        return {x[1]:x[0] for x in cur.fetchall()}
+        return {x[0]: {"id": x[1], "count": x[2]} for x in cur.fetchall()}
 
     def get_current_dns_query_record(self, year_month, date, hour):
         if not self.check_table_exist('cdn_dns_query_logs_%s' % year_month):

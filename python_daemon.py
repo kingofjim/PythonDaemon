@@ -16,32 +16,38 @@ def start():
     start_time_side = now.replace(minute=0, second=0, microsecond=0)
     end_time_side = now.replace(minute=0, second=0, microsecond=0)
     end_time_side = end_time_side + timedelta(hours=1)
+    timer_side = end_time_side.replace(minute=13)
+    start_time_validate = start_time_side
+    end_time_validate = end_time_side
+    timer_validate = end_time_validate.replace(minute=17)
+
 
     write_app_log('Daemon Start at: ' + now.strftime('%Y-%m-%d %H:%M:%S') + '\n')
-    print("start_time:", start_time_main)
-    print("end_time_main:", end_time_main)
-    print("end_time_side:", end_time_side)
+    print("Main Time: %s %s %s" % (start_time_main, end_time_main, end_time_main))
+    print("Side Time: %s %s %s" % (start_time_side, end_time_side, timer_side))
+    print("Validate Time: %s %s %s" % (start_time_validate, end_time_validate, timer_validate))
 
     try:
         while(True):
             print(now)
-            # every 5 mins
-            if end_time_main <= now:
-            # if (True):
-                main_job = threading.Thread(target=job_nginx_main(start_time_main, end_time_main))
-                main_job.start()
-                main_dns_job = threading.Thread(target=job_dns_main(start_time_main, end_time_main))
-                main_dns_job.start()
 
+            if end_time_main <= now:
+            # if True:
+            # if False:
+                main_job = threading.Thread(target=job_nginx_main(start_time_main, end_time_main))
+                main_dns_job = threading.Thread(target=job_dns_main(start_time_main, end_time_main))
+                main_job.start()
+                main_dns_job.start()
                 start_time_main = end_time_main
                 end_time_main = end_time_main + timedelta(minutes=5)
                 if (start_time_main.hour != end_time_main.hour):
                     end_time_main = end_time_main.replace(minute=0, second=0, microsecond=0)
                 main_job.join()
                 main_dns_job.join()
-            # every 1 hour
-            if end_time_side <= now:
+
+            if timer_side <= now:
             # if(True):
+            # if False:
                 side_job = threading.Thread(target=job_nginx_side(start_time_side, end_time_side))
                 side_job.start()
 
@@ -57,10 +63,23 @@ def start():
 
                 start_time_side = end_time_side
                 end_time_side = end_time_side + timedelta(hours=1)
+                timer_side + timedelta(hours=1)
                 side_job.join()
-            time_sleep = (end_time_main - datetime.now()).seconds + 2
-            print("SLEEP: %s seconds" % time_sleep)
-            time.sleep(time_sleep)
+
+            if timer_validate <= now:
+            # if True:
+                main_job = threading.Thread(target=job_nginx_main(start_time_validate, end_time_validate, validate=True))
+                main_dns_job = threading.Thread(target=job_dns_main(start_time_validate, end_time_validate, validate=True))
+                # main_job = threading.Thread(target=job_nginx_main(datetime.strptime("2020-08-25 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-25 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
+                # main_dns_job = threading.Thread(target=job_dns_main(datetime.strptime("2020-08-25 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-25 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
+                main_job.start()
+                main_dns_job.start()
+                end_time_validate = end_time_side + timedelta(hours=1)
+                timer_validate = timer_validate + timedelta(hours=1)
+                main_job.join()
+                main_dns_job.join()
+
+            time.sleep(3600)
             now = datetime.now()
     except KeyboardInterrupt:
         pass
@@ -85,14 +104,16 @@ def kill():
     pid = get_pid()
     os.popen('kill '+ pid).read().strip()
 
-def job_nginx_main(start_time, end_time):
+def job_nginx_main(start_time, end_time, validate=False):
     job_start_time = datetime.now()
     print("%s [Web-Main] Job Start" % job_start_time.strftime('%Y-%m-%d %H:%M:%S'))
     db = Database()
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
 
-    current_web_list = db.get_current_hour_web_record(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
+    current_web_list = db.get_cdn_web_logs(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
+    # print(current_web_list)
+    # exit()
 
     conf = configparser.ConfigParser()
     conf.read('conf.ini')
@@ -114,22 +135,37 @@ def job_nginx_main(start_time, end_time):
 
     elastic = Elasticsearch()
     update_list = elastic.search_sendbtye_by_domains(period=period)
-
+    print("[Web-Main] search_sendbtye_by_domains - result: %s" % update_list)
     if update_list:
         update_data = {}
+        validate_list = {}
         for query_domain, val in update_list.items():
             domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
+            sendbyte = int(val[1])
+            count = val[0]
             if domain:
                 write_app_log('%s => %s\n' % (query_domain, domain))
                 if (domain in current_web_list):
-                    id = current_web_list[domain]
-                    db.update_web_record(start_time.strftime('%Y%m'), str(int(val[1])), str(val[0]), id)
-                    write_app_log('%s [CDN] update: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(int(val[1])), str(val[0])))
+                    id = current_web_list[domain]['id']
+                    if validate:
+                        if domain in validate_list:
+                            validate_list[domain]["sendbyte"] += int(sendbyte)
+                            validate_list[domain]["count"] += count
+                        else:
+                            validate_list[domain] = {}
+                            validate_list[domain]["sendbyte"] = int(sendbyte)
+                            validate_list[domain]["count"] = count
+                            validate_list[domain]["id"] = id
+                    else:
+                        db.update_web_record(start_time.strftime('%Y%m'), sendbyte, count, id)
+                        write_app_log('%s [Web] update: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, sendbyte, count))
                     # print("update", domain, val)
                 else:
-                    id = db.insert_web_record(start_time.strftime('%Y%m'), domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(int(val[1])), str(val[0]))
-                    current_web_list[domain] = id
-                    write_app_log('%s [CDN] insert: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(int(val[1])), str(val[0])))
+                    id = db.insert_web_record(start_time.strftime('%Y%m'), domain, start_time.strftime('%Y-%m-%d'), start_time.hour, sendbyte, count)
+                    current_web_list[domain]["id"] = id
+                    current_web_list[domain]["sendbyte"] = sendbyte
+                    current_web_list[domain]["count"] = count
+                    write_app_log('%s [Web] insert: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, sendbyte, count))
                     # print("insert", domain, val)
 
                 if domain in update_data:
@@ -139,6 +175,15 @@ def job_nginx_main(start_time, end_time):
                     update_data[domain] = update_list[query_domain]
             else:
                 print('%s is not registered in database.\n' % (query_domain))
+        if validate:
+            if validate_list and current_web_list:
+                for domain, val in validate_list.items():
+                    sendbyte = val["sendbyte"]
+                    count = val["count"]
+                    id = val["id"]
+                    if domain in current_web_list and (current_web_list[domain]["sendbyte"] != sendbyte or current_web_list[domain]["count"] != count):
+                        db.update_web_record(start_time.strftime('%Y%m'), sendbyte, count, id, force=True)
+                        write_app_log('%s [Web] FORCE update: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, sendbyte, count))
     else:
         print("[Web] %s ELK result empty" % start_time.strftime('%Y-%m-%dT%H:%M:%S'))
         mailSupport("ELK查詢空值", "job_nginx_main %s ~ %s" % (start_time.strftime('%Y-%m-%dT%H:%M:%S'), end_time.strftime('%Y-%m-%dT%H:%M:%S')))
@@ -208,13 +253,15 @@ def job_nginx_side(start_time, end_time):
     db.close()
     print("[Web-Status] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
 
-def job_dns_main(start_time, end_time):
+def job_dns_main(start_time, end_time, validate=False):
     job_start_time = datetime.now()
     print("%s [Web-Main] Job Start" % job_start_time.strftime('%Y-%m-%d %H:%M:%S'))
     db = Database()
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
-    current_dns_list = db.get_current_dns_record(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
+    current_dns_list = db.get_dns_logs(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
+    # print(current_dns_list)
+    # exit()
 
     conf = configparser.ConfigParser()
     conf.read('conf.ini')
@@ -232,23 +279,40 @@ def job_dns_main(start_time, end_time):
 
     elastic = Elasticsearch()
     update_list = elastic.search_dns_query_by_domains(period=period)
+    validate_list = {}
 
     if update_list:
-        for query_domain, val in update_list.items():
+        for query_domain, count in update_list.items():
             domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
             if domain:
                 write_app_log('%s => %s\n' % (query_domain, domain))
-                if (domain in current_dns_list):
-                    id = current_dns_list[domain]
-                    db.update_dns_record(start_time.strftime('%Y%m'), str(val), id)
-                    write_app_log('%s [DNS] update: %s[%s] with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(val)))
-                    # print("update", domain, val)
+                if domain in current_dns_list:
+                    id = current_dns_list[domain]["id"]
+                    if validate:
+                        if domain in validate_list:
+                            validate_list[domain]['count'] += count
+                        else:
+                            validate_list[domain] = {}
+                            validate_list[domain]['count'] = count
+                            validate_list[domain]['id'] = id
+                    else:
+                        db.update_dns_record(start_time.strftime('%Y%m'), str(count), id)
+                        write_app_log('%s [DNS] update: %s[%s] with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(count)))
                 else:
-                    db.insert_dns_record(start_time.strftime('%Y%m'), domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(val))
-                    write_app_log('%s [DNS] insert: %s with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, str(val)))
-                    # print("insert", domain, val)
+                    id = db.insert_dns_record(start_time.strftime('%Y%m'), domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(count))
+                    write_app_log('%s [DNS] insert: %s with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, str(count)))
+                    current_dns_list[domain] = {"id": id, "count": count}
             else:
                 print('[DNS-Main] %s is not registered in database.\n' % (query_domain))
+
+        if validate:
+            for domain, val in validate_list.items():
+                count = val["count"]
+                id = val["id"]
+                if domain in current_dns_list and count != current_dns_list[domain]["count"]:
+                    db.update_dns_record(start_time.strftime('%Y%m'), str(count), id, force=True)
+                    write_app_log('%s [DNS] FORCE update: %s[%s] with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(count)))
+
         db.logs.commit()
     else:
         print("[DNS-Main] %s ELK result empty" % start_time.strftime('%Y-%m-%dT%H:%M:%S'))
