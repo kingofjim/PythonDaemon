@@ -21,14 +21,13 @@ def start():
     end_time_validate = end_time_side
     timer_validate = end_time_validate.replace(minute=17)
 
-
     write_app_log('Daemon Start at: ' + now.strftime('%Y-%m-%d %H:%M:%S') + '\n')
     print("Main Time: %s %s %s" % (start_time_main, end_time_main, end_time_main))
     print("Side Time: %s %s %s" % (start_time_side, end_time_side, timer_side))
     print("Validate Time: %s %s %s" % (start_time_validate, end_time_validate, timer_validate))
 
-    try:
-        while(True):
+    while (True):
+        try:
             print(now)
 
             if end_time_main <= now:
@@ -70,8 +69,8 @@ def start():
             # if True:
                 main_job = threading.Thread(target=job_nginx_main(start_time_validate, end_time_validate, validate=True))
                 main_dns_job = threading.Thread(target=job_dns_main(start_time_validate, end_time_validate, validate=True))
-                # main_job = threading.Thread(target=job_nginx_main(datetime.strptime("2020-08-25 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-25 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
-                # main_dns_job = threading.Thread(target=job_dns_main(datetime.strptime("2020-08-25 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-25 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
+                # main_job = threading.Thread(target=job_nginx_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-28 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
+                # main_dns_job = threading.Thread(target=job_dns_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-28 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
                 main_job.start()
                 main_dns_job.start()
                 end_time_validate = end_time_side + timedelta(hours=1)
@@ -81,23 +80,24 @@ def start():
 
             time.sleep(60)
             now = datetime.now()
-    except KeyboardInterrupt:
-        pass
-    except Exception as e:
-        error_class = e.__class__.__name__  # 取得錯誤類型
-        detail = e.args[0]  # 取得詳細內容
-        cl, exc, tb = sys.exc_info()  # 取得Call Stack
 
-        errMsg = ''
-        for lastCallStack in traceback.extract_tb(tb):
-            fileName = lastCallStack[0]  # 取得發生的檔案名稱
-            lineNum = lastCallStack[1]  # 取得發生的行號
-            funcName = lastCallStack[2]  # 取得發生的函數名稱
-            errMsg += "File \"{}\", line {}, in {}: [{}] {}\n".format(fileName, lineNum, funcName, error_class, detail)
+        except KeyboardInterrupt:
+            pass
+        except Exception as e:
+            error_class = e.__class__.__name__  # 取得錯誤類型
+            detail = e.args[0]  # 取得詳細內容
+            cl, exc, tb = sys.exc_info()  # 取得Call Stack
 
-        print(errMsg)
-        dt = datetime.now()
-        write_error_log(("%s\n + %s\n") % (dt.strftime('%Y-%m-%d %H:%M:%S'), errMsg))
+            errMsg = ''
+            for lastCallStack in traceback.extract_tb(tb):
+                fileName = lastCallStack[0]  # 取得發生的檔案名稱
+                lineNum = lastCallStack[1]  # 取得發生的行號
+                funcName = lastCallStack[2]  # 取得發生的函數名稱
+                errMsg += "File \"{}\", line {}, in {}: [{}] {}\n".format(fileName, lineNum, funcName, error_class, detail)
+
+            print(errMsg)
+            dt = datetime.now()
+            write_error_log(("%s\n + %s\n") % (dt.strftime('%Y-%m-%d %H:%M:%S'), errMsg))
 
 
 def kill():
@@ -162,6 +162,7 @@ def job_nginx_main(start_time, end_time, validate=False):
                     # print("update", domain, val)
                 else:
                     id = db.insert_web_record(start_time.strftime('%Y%m'), domain, start_time.strftime('%Y-%m-%d'), start_time.hour, sendbyte, count)
+                    current_web_list[domain] = {}
                     current_web_list[domain]["id"] = id
                     current_web_list[domain]["sendbyte"] = sendbyte
                     current_web_list[domain]["count"] = count

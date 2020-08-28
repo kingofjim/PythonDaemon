@@ -49,7 +49,7 @@ def mailSupport(mail_title, content):
             print(error_response)
             write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n' + 'Email Alert Error!!! \n' + error_response + '\n')
     except Exception as e:
-        write_error_log("%s\n" % str(e))
+        write_error_log("%s\n%s\n" % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), str(e)))
 
 def wachter_alert_cdn(datetime, domain):
     headers = {"Content-Type": "application/json", "charset": "utf-8"}
@@ -66,7 +66,7 @@ def wachter_alert_cdn(datetime, domain):
             print(error_response)
             write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n' + '[Watcher] alert CDN Error!!! \n' + error_response + '\n')
     except Exception as e:
-        write_error_log("%s\n" % str(e))
+        write_error_log("%s\n%s\n" % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), str(e)))
 
 def search_query_belong(type, db, data):
     domain = ''
