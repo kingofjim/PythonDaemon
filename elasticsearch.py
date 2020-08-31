@@ -22,9 +22,8 @@ class Elasticsearch:
             # print(response.text)
             response = response.json()
             shards = response['_shards']
-            if shards['total'] != shards['total']:
-                write_error_log('ERROR!!! %s ~ %s CDN main job shards failed\n' % (period[0], period[1]))
-                raise Exception('ERROR!!! %s ~ %s CDN main job shards failed' % (period[0], period[1]))
+            if shards['total'] != shards['successful']:
+                raise Exception('ERROR!!! %s ~ %s CDN main job shards failed.\n%s' % (period[0], period[1], response))
             response_bucket = response['aggregations']['domains']['buckets']
             # print(response_bucket)
             if response_bucket:
@@ -32,7 +31,7 @@ class Elasticsearch:
             else:
                 return {}
         else:
-            raise Exception('Elasticsearch search_sendbtye_by_domains not respond 200\n')
+            raise Exception('Elasticsearch search_sendbtye_by_domains not respond 200, but %s \n%s\n' % (response.status_code, response.text))
 
     def search_city_count_distribution(self, period):
         # body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"'+period[0]+'","lt":"'+period[1]+'"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword","size": 999999999},"aggs":{"country":{"terms":{"field":"geoip.country_name.keyword"},"aggs":{"distribution":{"terms":{"size":999999999,"field":"geoip.region_name.keyword"}}}}}}}}'
@@ -42,9 +41,8 @@ class Elasticsearch:
         if(response.status_code == 200):
             response = response.json()
             shards = response['_shards']
-            if shards['total'] != shards['total']:
-                write_error_log('ERROR!!! %s ~ %s DNS main job shards failed\n' % (period[0], period[1]))
-                raise Exception('ERROR!!! %s ~ %s DNS main job shards failed' % (period[0], period[1]))
+            if shards['total'] != shards['successful']:
+                raise Exception('ERROR!!! %s ~ %s CDN main job shards failed.\n%s' % (period[0], period[1], response))
             data = {}
             response_bucket = response['aggregations']['domains']['buckets']
             for country_data in response_bucket:
@@ -56,7 +54,7 @@ class Elasticsearch:
 
             return data
         else:
-            raise Exception('Elasticsearch search_city_count_distribution not respond 200\n')
+            raise Exception('Elasticsearch search_city_count_distribution not respond 200, but %s \n%s\n' % (response.status_code, response.text))
 
     def search_status_distribution(self, period):
         # body = '{"size":0,"query":{"constant_score":{"filter":{"range":{"@timestamp":{"gte":"' + period[0] + '","lt":"' + period[1] + '"}}}}},"aggs":{"domains":{"terms":{"field":"request_host.keyword","size":999999999},"aggs":{"status":{"terms":{"size":999999999,"field":"status.keyword"}}}}}}'
@@ -68,9 +66,8 @@ class Elasticsearch:
         if (response.status_code == 200):
             response = response.json()
             shards = response['_shards']
-            if shards['total'] != shards['total']:
-                write_error_log('ERROR!!! %s ~ %s DNS main job shards failed\n' % (period[0], period[1]))
-                raise Exception('ERROR!!! %s ~ %s DNS main job shards failed' % (period[0], period[1]))
+            if shards['total'] != shards['successful']:
+                raise Exception('ERROR!!! %s ~ %s DNS main job shards failed.\n%s' % (period[0], period[1], response))
             # if (True):
             data = {}
             # print(response.text)
@@ -84,7 +81,7 @@ class Elasticsearch:
                     data[status_data['key']][status_count['key']] = status_count['doc_count']
             return data
         else:
-            raise Exception('Elasticsearch search_status_distribution not respond 200\n')
+            raise Exception('Elasticsearch search_status_distribution not respond 200, but %s \n%s\n' % (response.status_code, response.text))
 
     def search_dns_query_by_domains(self, period):
 
@@ -96,9 +93,8 @@ class Elasticsearch:
             # print(response.text)
             response = response.json()
             shards = response['_shards']
-            if shards['total'] != shards['total']:
-                write_error_log('ERROR!!! %s ~ %s DNS main job shards failed\n' % (period[0], period[1]))
-                raise Exception('ERROR!!! %s ~ %s DNS main job shards failed' % (period[0], period[1]))
+            if shards['total'] != shards['successful']:
+                raise Exception('ERROR!!! %s ~ %s DNS main job shards failed.\n%s' % (period[0], period[1], response))
             response_bucket = response['aggregations']['2']['buckets']
             # print(response_bucket)
             if response_bucket:
@@ -107,7 +103,7 @@ class Elasticsearch:
             else:
                 return {}
         else:
-            raise Exception('Elasticsearch search_sendbtye_by_domains not respond 200\n')
+            raise Exception('Elasticsearch search_dns_query_by_domains not respond 200, but %s \n%s\n' % (response.status_code, response.text))
 
     def search_dns_query_by_ip(self, period):
         body = '{"aggs":{"2":{"terms":{"field":"client_ip.keyword","order":{"_count":"desc"},"size":9999999,"min_doc_count":100},"aggs":{"3":{"terms":{"field":"query_value.keyword","order":{"_count":"desc"},"size":999999}}}}},"size":0,"_source":{"excludes":[]},"stored_fields":["*"],"script_fields":{},"docvalue_fields":[{"field":"@timestamp","format":"date_time"}],"query":{"bool":{"must":[],"filter":[{"match_all":{}},{"range":{"@timestamp":{"format":"strict_date_optional_time","gte":"%s","lt":"%s"}}}],"should":[],"must_not":[]}}}' % (period[0], period[1])
@@ -118,9 +114,8 @@ class Elasticsearch:
             # print(response.text)
             response = response.json()
             shards = response['_shards']
-            if shards['total'] != shards['total']:
-                write_error_log('ERROR!!! %s ~ %s DNS-IP job shards failed\n' % (period[0], period[1]))
-                raise Exception('ERROR!!! %s ~ %s DNS-IP job shards failed' % (period[0], period[1]))
+            if shards['total'] != shards['successful']:
+                raise Exception('ERROR!!! %s ~ %s DNS-IP job shards failed.\n%s' % (period[0], period[1], response))
             response_bucket = response['aggregations']['2']['buckets']
             # print(response_bucket)
 
@@ -139,4 +134,4 @@ class Elasticsearch:
             else:
                 return {}
         else:
-            raise Exception('Elasticsearch search_sendbtye_by_domains not respond 200\n')
+            raise Exception('Elasticsearch search_dns_query_by_ip not respond 200, but %s \n%s\n' % (response.status_code, response.text))
