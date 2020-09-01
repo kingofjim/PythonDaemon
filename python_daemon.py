@@ -62,7 +62,7 @@ def start():
 
                 start_time_side = end_time_side
                 end_time_side = end_time_side + timedelta(hours=1)
-                timer_side + timedelta(hours=1)
+                timer_side = timer_side + timedelta(hours=1)
                 side_job.join()
 
             if timer_validate <= now:
@@ -98,6 +98,7 @@ def start():
             print(errMsg)
             dt = datetime.now()
             write_error_log(("%s\n + %s\n") % (dt.strftime('%Y-%m-%d %H:%M:%S'), errMsg))
+            mailSupport("PythonDaemon ERROR", errMsg)
 
 
 def kill():
