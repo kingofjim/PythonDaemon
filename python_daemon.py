@@ -35,12 +35,14 @@ def start():
             # if False:
                 main_job = threading.Thread(target=job_nginx_main(start_time_main, end_time_main))
                 main_dns_job = threading.Thread(target=job_dns_main(start_time_main, end_time_main))
-                main_job.start()
-                main_dns_job.start()
+
                 start_time_main = end_time_main
                 end_time_main = end_time_main + timedelta(minutes=5)
                 if (start_time_main.hour != end_time_main.hour):
                     end_time_main = end_time_main.replace(minute=0, second=0, microsecond=0)
+
+                main_job.start()
+                main_dns_job.start()
                 main_job.join()
                 main_dns_job.join()
 
@@ -71,15 +73,14 @@ def start():
                 main_dns_job = threading.Thread(target=job_dns_main(start_time_validate, end_time_validate, validate=True))
                 # main_job = threading.Thread(target=job_nginx_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-28 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
                 # main_dns_job = threading.Thread(target=job_dns_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-28 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
-                main_job.start()
-                main_dns_job.start()
+
                 end_time_validate = end_time_side + timedelta(hours=1)
                 timer_validate = timer_validate + timedelta(hours=1)
+
+                main_job.start()
+                main_dns_job.start()
                 main_job.join()
                 main_dns_job.join()
-
-            time.sleep(60)
-            now = datetime.now()
 
         except KeyboardInterrupt:
             pass
@@ -99,6 +100,9 @@ def start():
             dt = datetime.now()
             write_error_log(("%s\n + %s\n") % (dt.strftime('%Y-%m-%d %H:%M:%S'), errMsg))
             mailSupport("PythonDaemon ERROR", errMsg)
+
+        time.sleep(60)
+        now = datetime.now()
 
 
 def kill():
