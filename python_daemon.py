@@ -149,7 +149,7 @@ def job_nginx_main(start_time, end_time, validate=False):
             sendbyte = int(val[1])
             count = val[0]
             if domain:
-                write_app_log('%s => %s\n' % (query_domain, domain))
+                # write_app_log('%s => %s\n' % (query_domain, domain))
                 if (domain in current_web_list):
                     id = current_web_list[domain]['id']
                     if validate:
@@ -226,7 +226,7 @@ def job_nginx_side(start_time, end_time):
     for query_domain, country_data in dis_data.items():
         domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
         if domain:
-            write_app_log('%s => %s\n' % (query_domain, domain))
+            # write_app_log('%s => %s\n' % (query_domain, domain))
             for country, city_data in country_data.items():
                 for city, count in city_data.items():
                     query_val += '("%s","%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, country, city, count)
@@ -245,7 +245,7 @@ def job_nginx_side(start_time, end_time):
     for query_domain, status_data in elk_status_data.items():
         domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
         if domain:
-            write_app_log('%s => %s\n' % (query_domain, domain))
+            # write_app_log('%s => %s\n' % (query_domain, domain))
             for status, count in status_data.items():
                 query_val += '("%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, status, count)
                 write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' [Web Status] insert: %s status:%s count:%s\n' % (domain, status, count))
@@ -291,7 +291,7 @@ def job_dns_main(start_time, end_time, validate=False):
         for query_domain, count in update_list.items():
             domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
             if domain:
-                write_app_log('%s => %s\n' % (query_domain, domain))
+                # write_app_log('%s => %s\n' % (query_domain, domain))
                 if domain in current_dns_list:
                     id = current_dns_list[domain]["id"]
                     if validate:
@@ -336,7 +336,7 @@ def job_dns_main(start_time, end_time, validate=False):
             domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
             # print(query_domain, "=> ", domain)
             if domain:
-                write_app_log('%s => %s\n' % (query_domain, domain))
+                # write_app_log('%s => %s\n' % (query_domain, domain))
                 if (ip in current_dns_ip_list and query_domain in current_dns_ip_list[ip]):
                     id = current_dns_ip_list[ip][query_domain]
                     db.update_dns_query_record(start_time.strftime('%Y%m'), str(count), id)
