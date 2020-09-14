@@ -33,7 +33,7 @@ def get_watcher():
 def mailSupport(mail_title, content):
     conf = configparser.ConfigParser()
     conf.read('conf.ini')
-
+    content = content.replace('"', "").replace("\n", "<br>")
     headers = {"Content-Type": "application/json", "charset": "utf-8"}
     body = '{"mailer_target": "%s","mailer_subject": "PythonDaemon異常警報", "mailer_title": "%s", "mailer_content": "%s"}' % (conf['watcher']['mail_target'], mail_title, content)
     body = body.encode('utf-8')
@@ -45,7 +45,7 @@ def mailSupport(mail_title, content):
             write_app_log("%s [Mail] Email Alert Sent - %s\n" % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), mail_title))
         else:
             print('Email alert error!!!')
-            error_response = response.content.encode("utf-8")
+            error_response = response.content.decode("utf-8")
             print(error_response)
             write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n' + 'Email Alert Error!!! \n' + 'mail_title: %s\nmail_content: %s\n' + error_response + '\n' % (mail_title, content))
     except Exception as e:
