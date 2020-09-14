@@ -30,22 +30,22 @@ def start():
         try:
             print(now)
 
-            # if end_time_main <= now:
-            if True:
+            if end_time_main <= now:
+            # if True:
             # if False:
-            #     main_job = threading.Thread(target=job_nginx_main(start_time_main, end_time_main))
-            #     main_dns_job = threading.Thread(target=job_dns_main(start_time_main, end_time_main))
+                main_job = threading.Thread(target=job_nginx_main(start_time_main, end_time_main))
+                main_dns_job = threading.Thread(target=job_dns_main(start_time_main, end_time_main))
             #     main_job = threading.Thread(target=job_nginx_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-09-14 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
-                main_dns_job = threading.Thread(target=job_dns_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-09-14 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
+            #     main_dns_job = threading.Thread(target=job_dns_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-09-14 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
 
                 start_time_main = end_time_main
                 end_time_main = end_time_main + timedelta(minutes=5)
                 if (start_time_main.hour != end_time_main.hour):
                     end_time_main = end_time_main.replace(minute=0, second=0, microsecond=0)
 
-                # main_job.start()
+                main_job.start()
                 main_dns_job.start()
-                # main_job.join()
+                main_job.join()
                 main_dns_job.join()
 
             if timer_side <= now:
