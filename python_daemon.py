@@ -71,14 +71,16 @@ def start():
 
             if timer_validate <= now:
             # if True:
+                print("%s [Validator] Job Start" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                 main_job = threading.Thread(target=job_nginx_main(start_time_validate, end_time_validate, validate=True))
                 main_dns_job = threading.Thread(target=job_dns_main(start_time_validate, end_time_validate, validate=True))
                 # main_job = threading.Thread(target=job_nginx_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-28 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
                 # main_dns_job = threading.Thread(target=job_dns_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-28 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
 
                 start_time_validate = end_time_validate
-                end_time_validate = end_time_side + timedelta(hours=1)
+                end_time_validate = end_time_validate + timedelta(hours=1)
                 timer_validate = timer_validate + timedelta(hours=1)
+                print("Validate Time: %s %s %s" % (start_time_validate, end_time_validate, timer_validate))
 
                 main_job.start()
                 main_dns_job.start()
