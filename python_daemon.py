@@ -74,6 +74,7 @@ def start():
                 # main_job = threading.Thread(target=job_nginx_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-28 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
                 # main_dns_job = threading.Thread(target=job_dns_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-28 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
 
+                start_time_validate = end_time_validate
                 end_time_validate = end_time_side + timedelta(hours=1)
                 timer_validate = timer_validate + timedelta(hours=1)
 
@@ -340,7 +341,7 @@ def job_dns_main(start_time, end_time, validate=False):
                 if (ip in current_dns_ip_list and query_domain in current_dns_ip_list[ip]):
                     id = current_dns_ip_list[ip][query_domain]
                     db.update_dns_query_record(start_time.strftime('%Y%m'), str(count), id)
-                    write_app_log('[DNS-IP] %s update: %s[%s] with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, str(count)))
+                    write_app_log('[DNS-IP] %s update: %s %s[%s] with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), ip, domain, id, str(count)))
                     # print("update", domain, count)
                 else:
                     db.insert_dns_query_record(start_time.strftime('%Y%m'), ip, domain, query_domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(count))
