@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timedelta
 import threading
 from elasticsearch import Elasticsearch
+from dateutil.relativedelta import relativedelta
 
 def start():
     now = datetime.now()
@@ -410,6 +411,15 @@ def update_period(p1, p2):
     print("%s Completed update period" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     print("update_period %s ~ %s took %s second(s)" % (p1, p2, (datetime.now() - start_time).total_seconds()))
 
+def create_log_table(month):
+    if month is None:
+        next_month = datetime.now() + relativedelta(months=1)
+    else:
+        next_month = datetime.now().replace(month=int(month))
+    db = Database()
+    db.create_tale("all", next_month.strftime("%Y%m"))
+    db.close()
+
 if(len(sys.argv) > 1):
     if sys.argv[1] == 'update_period':
         if len(sys.argv) == 4:
@@ -426,5 +436,10 @@ if(len(sys.argv) > 1):
 
         else:
             print('請輸入有效Timestamp ex. update_period 2020-05-04T09:00:00 2020-05-04T18:00:00')
-    else:
+    elif sys.argv[1] == 'create_log_table':
+        eval(sys.argv[1])(month=None if len(sys.argv) != 3 else sys.argv[2])
+
+    elif sys.argv[1] == 'start':
         eval(sys.argv[1])()
+    else:
+        print('請輸入有效指令\nstart\nupdate_period ${timestamp1} ${timestamp2}\ncreate_log_table')
