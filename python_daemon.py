@@ -34,6 +34,13 @@ def start():
             if end_time_main <= now:
             # if True:
             # if False:
+
+                # check table exist
+                db = Database()
+                if(len(db.get_all_table(start_time_main.strftime("%Y%m"))) != len(db.table_set)):
+                    create_log_table(start_time_main.month)
+                db.close()
+
                 main_job = threading.Thread(target=job_nginx_main(start_time_main, end_time_main))
                 main_dns_job = threading.Thread(target=job_dns_main(start_time_main, end_time_main))
             #     main_job = threading.Thread(target=job_nginx_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-09-14 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
@@ -122,8 +129,6 @@ def job_nginx_main(start_time, end_time, validate=False):
     end_time_utc = end_time - timedelta(hours=8)
 
     current_web_list = db.get_cdn_web_logs(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
-    # print(current_web_list)
-    # exit()
 
     conf = configparser.ConfigParser()
     conf.read('conf.ini')
@@ -271,8 +276,6 @@ def job_dns_main(start_time, end_time, validate=False):
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
     current_dns_list = db.get_dns_logs(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
-    # print(current_dns_list)
-    # exit()
 
     conf = configparser.ConfigParser()
     conf.read('conf.ini')
