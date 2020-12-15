@@ -120,23 +120,6 @@ class Database:
         cur.execute(query)
         self.logs.commit()
 
-    def get_cdn_overused(self, p1, p2, request_threshold, traffic_threshold):
-        cur = self.logs.cursor()
-        p1_year_month = p1.strftime('%Y%m')
-        p2_year_month = p2.strftime('%Y%m')
-        p1_datetime = p1.strftime('%Y-%m-%d')
-        p2_datetime = p2.strftime('%Y-%m-%d')
-        p1_hour = p1.hour
-        p2_hour = p2.hour
-
-        query = 'select a.domain, a.count as "last.count", b.count as "count", a.sendbyte as "last.sendbyte", b.sendbyte as "sendbyte" from (select domain, count, sendbyte from cdn_web_logs_%s where date="%s" and hour=%s) a left join (select domain, count, sendbyte from cdn_web_logs_%s where date="%s" and hour=%s) b on a.domain=b.domain where a.count < b.count/%s or a.sendbyte < b.sendbyte/%s;' \
-                % (p1_year_month, p1_datetime, p1_hour, p2_year_month, p2_datetime, p2_hour, request_threshold, traffic_threshold)
-        cur.execute(query)
-
-        result = cur.fetchall()
-
-        return result
-
     def check_table_exist(self, tablename):
         cur = self.logs.cursor()
         query = 'SELECT * FROM information_schema.tables WHERE table_name = "%s" and not table_schema like "%%backup"' % tablename
@@ -149,7 +132,7 @@ class Database:
     def get_all_table(self, yearmonth):
         cur = self.logs.cursor()
         query = 'SELECT table_name FROM information_schema.tables WHERE table_schema = "cdn_logs" and table_name like "%%_%s" group by table_name;' % yearmonth
-        print(query)
+        # print(query)
         cur.execute(query)
         return cur.fetchall()
 

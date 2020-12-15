@@ -30,12 +30,12 @@ def get_watcher():
     conf.read('conf.ini')
     return int(conf['watcher']['cdn_limit'])
 
-def mailSupport(mail_title, content):
+def mailSupport(mail_title, content, mail_buject="PythonDaemon異常警報"):
     conf = configparser.ConfigParser()
     conf.read('conf.ini')
     content = content.replace('"', "").replace("\n", "<br>")
     headers = {"Content-Type": "application/json", "charset": "utf-8"}
-    body = '{"mailer_target": "%s","mailer_subject": "PythonDaemon異常警報", "mailer_title": "%s", "mailer_content": "%s"}' % (conf['watcher']['mail_target'], mail_title, content)
+    body = '{"mailer_target": "%s","mailer_subject": "%s", "mailer_title": "%s", "mailer_content": "%s"}' % (conf['watcher']['mail_target'], mail_buject, mail_title, content)
     body = body.encode('utf-8')
     try:
         response = requests.post(conf['watcher']['mail_api'], headers=headers, data=body)
@@ -200,3 +200,12 @@ def determin_domain(target, cdn_domains, not_cdn_domains):
             return query
 
     return domain
+
+if __name__ == '__main__':
+    cdn_domains = ['leacloud.net', 'qnvtang.com', 'leacloud.com', 'reachvpn.com', 'jetstartech.com', 'wqlyjy.cn', 'lea.cloud', 'jtechcloud.com', 'leaidc.com', 'ahskzs.cn', 'tjwohuite.com', 'www.ttt.com', 'hbajhw.com', 'tjflsk.com', 'anjuxinxi.com', 'test.leacloud.net', 'tongxueqn.com', '*.unnychina.com', '*.atpython.com', '*.daguosz.com', '*.cfbaoche.com', '*.baliangxian.com', '*.yunyishihu.com', '*.clwdfhw.com', '*.hnstrcyj.com', 'www.lanshengyoupin.com', 'www.chinaynt.com', 'www.pcgame198.com', 'www.pintusx.com', 'www.frzhibo.com', 'www.nanjingcaishui.com', 'www.shsxmygs.com', 'www.jsonencode.com', 'www.xgmgnz.com', 'www.sinceidc.com', 'www.njyymzp.com', 'www.rikimrobot.com', 'www.mifeiwangluo.com', 'www.lvqqtt.com', 'www.wuhanbsz.com', 'www.xueqiusj.com', 'www.queqiaocloud.com', 'www.jiajiaoshiting.com', 'www.laotsai.com', 'www.daoliuliang365.com', 'www.dazhougongjiao.com', 'www.hndingkun.com', 'www.liangct.com', 'www.amandacasa.com', 'www.ruiyoushouyou.com', 'www.yychaoli.com',
+                   'www.allcureglobal.com', 'www.whrenatj.com', 'yidaaaa.com', 'lea.hncgw.cn', 'webld.cqgame.games', 'test12345.tongxueqn.com', 'cc.kkk222.com', 'cdn.2019wsd.com', 'webh5ld.cqgame.cc', 'vip77759.com', 'tggame.topgame6.com', '*.jcxfdc.cn', '*.mrqzs.cn', '*.dlswl.cn', '*.0oiser.club', '*.greenpay.xyz', '*.greentrad.net', '*.greenpay.vip', 'www.youxizaixian100.com', 'yilongth.com', 'weidichuxing.com', 'dianwankeji.com', 'haiyunpush.com', 'qushiyunmei.com']
+    not_cdn_domains = ["gotolcd.net", "adminlcd.net", "highlcd.net", "leaidc.net"]
+
+    result = determin_domain('api.leacloud.net', cdn_domains, not_cdn_domains)
+
+    print(result)

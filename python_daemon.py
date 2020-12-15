@@ -7,6 +7,9 @@ from datetime import datetime, timedelta
 import threading
 from elasticsearch import Elasticsearch
 from dateutil.relativedelta import relativedelta
+from hurry.filesize import size, si
+
+LAST_WEB_LIST = {}
 
 def start():
     now = datetime.now()
@@ -41,36 +44,25 @@ def start():
                     create_log_table(start_time_main.month)
                 db.close()
 
-                main_job = threading.Thread(target=job_nginx_main(start_time_main, end_time_main))
+                main_cdn_job = threading.Thread(target=job_nginx_main(start_time_main, end_time_main))
                 main_dns_job = threading.Thread(target=job_dns_main(start_time_main, end_time_main))
-            #     main_job = threading.Thread(target=job_nginx_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-09-14 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
-            #     main_dns_job = threading.Thread(target=job_dns_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-09-14 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
+                # main_cdn_job = threading.Thread(target=job_nginx_main(datetime.strptime("2020-12-13 12:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-12-13 12:05:00", "%Y-%m-%d %H:%M:%S"), validate=False))
+                # main_dns_job = threading.Thread(target=job_dns_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-09-14 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
 
                 start_time_main = end_time_main
                 end_time_main = end_time_main + timedelta(minutes=5)
                 if (start_time_main.hour != end_time_main.hour):
                     end_time_main = end_time_main.replace(minute=0, second=0, microsecond=0)
 
-                main_job.start()
+                main_cdn_job.start()
                 main_dns_job.start()
-                main_job.join()
+                main_cdn_job.join()
                 main_dns_job.join()
 
             if timer_side <= now:
             # if(True):
-            # if False:
                 side_job = threading.Thread(target=job_nginx_side(start_time_side, end_time_side))
                 side_job.start()
-
-                conf = configparser.ConfigParser()
-                conf.read('conf.ini')
-                request_threshold = int(conf['watcher']['cdn_request_threshold'])
-                traffic_threshold = int(conf['watcher']['cdn_traffic_threshold'])
-
-                if conf['watcher']['enable'] == 'True' and request_threshold and traffic_threshold:
-                    watcher_job = threading.Thread(target=watcher(start_time_side, request_threshold, traffic_threshold))
-                    watcher_job.start()
-                    watcher_job.join()
 
                 start_time_side = end_time_side
                 end_time_side = end_time_side + timedelta(hours=1)
@@ -80,9 +72,9 @@ def start():
             if timer_validate <= now:
             # if True:
                 print("%s [Validator] Job Start" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-                main_job = threading.Thread(target=job_nginx_main(start_time_validate, end_time_validate, validate=True))
+                main_cdn_job = threading.Thread(target=job_nginx_main(start_time_validate, end_time_validate, validate=True))
                 main_dns_job = threading.Thread(target=job_dns_main(start_time_validate, end_time_validate, validate=True))
-                # main_job = threading.Thread(target=job_nginx_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-28 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
+                # main_cdn_job = threading.Thread(target=job_nginx_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-28 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
                 # main_dns_job = threading.Thread(target=job_dns_main(datetime.strptime("2020-08-28 16:00:00", "%Y-%m-%d %H:%M:%S"), datetime.strptime("2020-08-28 17:00:00", "%Y-%m-%d %H:%M:%S"), validate=True))
 
                 start_time_validate = end_time_validate
@@ -90,9 +82,9 @@ def start():
                 timer_validate = timer_validate + timedelta(hours=1)
                 print("Validate Time: %s %s %s" % (start_time_validate, end_time_validate, timer_validate))
 
-                main_job.start()
+                main_cdn_job.start()
                 main_dns_job.start()
-                main_job.join()
+                main_cdn_job.join()
                 main_dns_job.join()
 
         except KeyboardInterrupt:
@@ -111,9 +103,10 @@ def start():
 
             dt = datetime.now()
             write_error_log(("%s\n + %s\n") % (dt.strftime('%Y-%m-%d %H:%M:%S'), errMsg))
-            mailSupport("PythonDaemon ERROR", errMsg)
+            print(errMsg)
+            # mailSupport("PythonDaemon ERROR", errMsg)
 
-        time.sleep(60)
+        time.sleep(5)
         now = datetime.now()
 
 
@@ -124,6 +117,9 @@ def kill():
 def job_nginx_main(start_time, end_time, validate=False):
     job_start_time = datetime.now()
     print("%s [Web-Main] Job Start" % job_start_time.strftime('%Y-%m-%d %H:%M:%S'))
+    global LAST_WEB_LIST
+    last_web_list = LAST_WEB_LIST
+    print("last_web_list", last_web_list)
     db = Database()
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
@@ -191,6 +187,7 @@ def job_nginx_main(start_time, end_time, validate=False):
                     update_data[domain] = update_list[query_domain]
             else:
                 print('%s is not registered in database.\n' % (query_domain))
+        # 事後驗證
         if validate:
             if validate_list and current_web_list:
                 for domain, val in validate_list.items():
@@ -200,16 +197,35 @@ def job_nginx_main(start_time, end_time, validate=False):
                     if domain in current_web_list and (current_web_list[domain]["sendbyte"] != sendbyte or current_web_list[domain]["count"] != count):
                         db.update_web_record(start_time.strftime('%Y%m'), sendbyte, count, id, force=True)
                         write_app_log('%s [Web] FORCE update: %s[%s] with sendbyte: %s count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, id, sendbyte, count))
+        else:
+            # 偵測攻擊
+            if conf['watcher']['enable'] == 'True':
+                # last_web_list = {
+                #     "images.cq9web.com": {
+                #         "id": 1,
+                #         "sendbyte": 100,
+                #         "count": 1
+                #     },
+                #     'www.luntanx18.info': {
+                #         "id": 2,
+                #         "sendbyte": 1,
+                #         "count": 0
+                #     }
+                # }
+                watcher(conf, last_web_list, update_list, start_time, end_time)
     else:
         print("[Web] %s ELK result empty" % start_time.strftime('%Y-%m-%dT%H:%M:%S'))
         mailSupport("ELK查詢空值", "job_nginx_main %s ~ %s" % (start_time.strftime('%Y-%m-%dT%H:%M:%S'), end_time.strftime('%Y-%m-%dT%H:%M:%S')))
 
     db.close()
+    LAST_WEB_LIST = update_list
     print("[Web-Main] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
 
 def job_nginx_side(start_time, end_time):
     job_start_time = datetime.now()
     print("%s [Web-Side] Job Start" % job_start_time.strftime('%Y-%m-%d %H:%M:%S'))
+    conf = configparser.ConfigParser()
+    conf.read('conf.ini')
     db = Database()
     db.update_web_bandwidth(start_time.strftime('%Y%m'), end_time.strftime('%Y-%m-%d'), end_time.hour)
     write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') +' bandwidth updated\n')
@@ -218,12 +234,7 @@ def job_nginx_side(start_time, end_time):
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
     period = [start_time_utc.strftime('%Y-%m-%dT%H:%M:%S'), end_time_utc.strftime('%Y-%m-%dT%H:%M:%S')]
-    print("[Web-Side] period:", period)
-    # -- city count --
-    dis_data = els.search_city_count_distribution(period)
 
-    conf = configparser.ConfigParser()
-    conf.read('conf.ini')
     if conf['app']['force_input_ol_domains'] == 'True':
         # force input OL data for testing
         cdn_domains = ['leacloud.net','qnvtang.com','leacloud.com','reachvpn.com','jetstartech.com','wqlyjy.cn','lea.cloud','jtechcloud.com','leaidc.com','ahskzs.cn','tjwohuite.com','www.ttt.com','hbajhw.com','tjflsk.com','anjuxinxi.com','test.leacloud.net','tongxueqn.com','*.unnychina.com','*.atpython.com','*.daguosz.com','*.cfbaoche.com','*.baliangxian.com','*.yunyishihu.com','*.clwdfhw.com','*.hnstrcyj.com','www.lanshengyoupin.com','www.chinaynt.com','www.pcgame198.com','www.pintusx.com','www.frzhibo.com','www.nanjingcaishui.com','www.shsxmygs.com','www.jsonencode.com','www.xgmgnz.com','www.sinceidc.com','www.njyymzp.com','www.rikimrobot.com','www.mifeiwangluo.com','www.lvqqtt.com','www.wuhanbsz.com','www.xueqiusj.com','www.queqiaocloud.com','www.jiajiaoshiting.com','www.laotsai.com','www.daoliuliang365.com','www.dazhougongjiao.com','www.hndingkun.com','www.liangct.com','www.amandacasa.com','www.ruiyoushouyou.com','www.yychaoli.com','www.allcureglobal.com','www.whrenatj.com','yidaaaa.com','lea.hncgw.cn','webld.cqgame.games','test12345.tongxueqn.com','cc.kkk222.com','cdn.2019wsd.com','webh5ld.cqgame.cc','vip77759.com','tggame.topgame6.com','*.jcxfdc.cn','*.mrqzs.cn','*.dlswl.cn','*.0oiser.club','*.greenpay.xyz','*.greentrad.net','*.greenpay.vip','www.youxizaixian100.com','yilongth.com','weidichuxing.com','dianwankeji.com','haiyunpush.com','qushiyunmei.com']
@@ -232,21 +243,24 @@ def job_nginx_side(start_time, end_time):
         cdn_domains = db.get_cdn_domains()
         not_cdn_domains = db.get_not_cdn_domains()
 
-    query_val = ''
-    for query_domain, country_data in dis_data.items():
-        domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
-        if domain:
-            # write_app_log('%s => %s\n' % (query_domain, domain))
-            for country, city_data in country_data.items():
-                for city, count in city_data.items():
-                    query_val += '("%s","%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, country, city, count)
-                    write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' [Web distribution] insert: %s status:%s count:%s\n' % (domain, city, count))
-        else:
-            print('[Web-Side] %s is not registered in database.\n' % (query_domain))
-    query_val = query_val[:-1]
-    if query_val:
-        db.insert_web_dist(start_time.strftime('%Y%m'), query_val)
-    print("[Web-Side] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
+    # -- city count --
+    # print("[Web-Side] period:", period)
+    # dis_data = els.search_city_count_distribution(period)
+    # query_val = ''
+    # for query_domain, country_data in dis_data.items():
+    #     domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
+    #     if domain:
+    #         # write_app_log('%s => %s\n' % (query_domain, domain))
+    #         for country, city_data in country_data.items():
+    #             for city, count in city_data.items():
+    #                 query_val += '("%s","%s","%s","%s","%s","%s"),' % (domain, start_time.strftime('%Y-%m-%d'), start_time.hour, country, city, count)
+    #                 write_app_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' [Web distribution] insert: %s status:%s count:%s\n' % (domain, city, count))
+    #     else:
+    #         print('[Web-Side] %s is not registered in database.\n' % (query_domain))
+    # query_val = query_val[:-1]
+    # if query_val:
+    #     db.insert_web_dist(start_time.strftime('%Y%m'), query_val)
+    # print("[Web-Side] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
 
     # -- status --
     job_start_time = datetime.now()
@@ -334,64 +348,88 @@ def job_dns_main(start_time, end_time, validate=False):
 
     print("[DNS-Main] Time spend %s" % (datetime.now()-job_start_time).total_seconds())
 
-    job_start_time = datetime.now()
-    current_dns_ip_list = db.get_current_dns_query_record(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
-    update_list = elastic.search_dns_query_by_ip(period=period)
-
-    for ip, ip_data in update_list.items():
-        for query_domain, count in ip_data.items():
-            # print(ip, query_domain, count)
-            domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
-            # print(query_domain, "=> ", domain)
-            if domain:
-                # write_app_log('%s => %s\n' % (query_domain, domain))
-                if (ip in current_dns_ip_list and query_domain in current_dns_ip_list[ip]):
-                    id = current_dns_ip_list[ip][query_domain]
-                    db.update_dns_query_record(start_time.strftime('%Y%m'), str(count), id)
-                    write_app_log('[DNS-IP] %s update: %s %s[%s] with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), ip, domain, id, str(count)))
-                    # print("update", domain, count)
-                else:
-                    db.insert_dns_query_record(start_time.strftime('%Y%m'), ip, domain, query_domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(count))
-                    write_app_log('[DNS-IP] %s insert: %s with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, str(count)))
-                    # print("insert", domain, count)
-            else:
-                write_app_log('[DNS-IP] %s is not registered in database.\n' % (query_domain))
-                print('[DNS-IP] %s is not registered in database.\n' % (query_domain))
-    db.logs.commit()
-    print("[DNS-IP] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
+    # job_start_time = datetime.now()
+    # current_dns_ip_list = db.get_current_dns_query_record(start_time.strftime('%Y%m'), start_time.date(), start_time.hour)
+    # update_list = elastic.search_dns_query_by_ip(period=period)
+    #
+    # for ip, ip_data in update_list.items():
+    #     for query_domain, count in ip_data.items():
+    #         # print(ip, query_domain, count)
+    #         domain = determin_domain(query_domain, cdn_domains, not_cdn_domains)
+    #         # print(query_domain, "=> ", domain)
+    #         if domain:
+    #             # write_app_log('%s => %s\n' % (query_domain, domain))
+    #             if (ip in current_dns_ip_list and query_domain in current_dns_ip_list[ip]):
+    #                 id = current_dns_ip_list[ip][query_domain]
+    #                 db.update_dns_query_record(start_time.strftime('%Y%m'), str(count), id)
+    #                 write_app_log('[DNS-IP] %s update: %s %s[%s] with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), ip, domain, id, str(count)))
+    #                 # print("update", domain, count)
+    #             else:
+    #                 db.insert_dns_query_record(start_time.strftime('%Y%m'), ip, domain, query_domain, start_time.strftime('%Y-%m-%d'), start_time.hour, str(count))
+    #                 write_app_log('[DNS-IP] %s insert: %s with count: %s \n' % (start_time.strftime('%Y-%m-%d %H:%M:%S'), domain, str(count)))
+    #                 # print("insert", domain, count)
+    #         else:
+    #             write_app_log('[DNS-IP] %s is not registered in database.\n' % (query_domain))
+    #             print('[DNS-IP] %s is not registered in database.\n' % (query_domain))
+    # db.logs.commit()
+    # print("[DNS-IP] Time spend %s" % (datetime.now() - job_start_time).total_seconds())
     db.close()
 
-def watcher(job_time, request_threshold, traffic_threshold):
+def watcher(conf, last_web_list, update_list, start_time, end_time):
     print("%s [Watcher] Start]" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     write_app_log("%s [Watcher] Start]\n" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    db = Database()
-    job_time_last_hour = job_time-timedelta(hours=1)
-    overused_domain = db.get_cdn_overused(job_time_last_hour, job_time, request_threshold, traffic_threshold)
-    db.close()
+    if last_web_list:
+        traffic_max = int(conf["watcher"]["cdn_traffic_max"])
+        traffic_min = int(conf["watcher"]["cdn_traffic_min"])
+        traffic_multiply = int(conf["watcher"]["cdn_traffic_multiply"])
+        request_max = int(conf["watcher"]["cdn_request_max"])
+        request_min = int(conf["watcher"]["cdn_request_min"])
+        request_multiply = int(conf["watcher"]["cdn_request_multiply"])
+        alert_domain_list = {"traffic": {}, "request": {}}
+        for domain, data in update_list.items():
+            val = {}
+            val["count"] = data[0]
+            val["sendbyte"] = data[1]
+            if domain in last_web_list:
+                # check sendbyte
+                if val["sendbyte"] > traffic_min:
+                    if val["sendbyte"] > traffic_max or val["sendbyte"] > last_web_list[domain][1] * traffic_multiply:
+                        alert_domain_list["traffic"][domain] = val
+                        alert_domain_list["traffic"][domain]["sendbyte"] = val["sendbyte"]
 
-    if overused_domain:
-        mail_content = ''
-        alert_content = ''
-        for data in overused_domain:
-            domain = data[0]
-            last_count = data[1]
-            count = data[2]
-            last_sendbyte = data[3]
-            sendbyte = data[4]
-            mail_content += '%s:<br>&nbsp;&nbsp; Request(次) %s => %s<br>&nbsp;&nbsp; Traffic(byte) %s => %s <br>' % (domain, last_count, count, last_sendbyte, sendbyte)
-            alert_content += '"%s",' % domain
-        alert_content = alert_content[:-1]
-        try:
-            mail_title = "%s ~ %s" % (job_time_last_hour.strftime('%Y-%m-%d %H:%M:%S'), job_time.strftime('%Y-%m-%d %H:%M:%S'))
-            mailSupport(mail_title, mail_content)
-        except Exception as e:
-            write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
+                elif val["count"] > request_min:
+                    if val["count"] > request_max or val["count"] > last_web_list[domain][0] * request_multiply:
+                        alert_domain_list["request"][domain] = val
 
-        try:
-            wachter_alert_cdn(job_time.strftime('%Y-%m-%d %H:%M:%S'), alert_content)
-        except Exception as e:
-            write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
+        if alert_domain_list["request"] or alert_domain_list["traffic"]:
+            mail_content = ''
+            # alert_content = ''
+
+            for cate in alert_domain_list:
+                if (cate == "traffic" and alert_domain_list["traffic"]):
+                    mail_content += '<h4>流量(Traffic)超標</h4>'
+                elif (cate == "request" and alert_domain_list["request"]):
+                    mail_content += '<h4>請求(Request)超標</h4>'
+
+                for domain, val in alert_domain_list[cate].items():
+                    last_count = last_web_list[domain]['count']
+                    count = val['count']
+                    last_sendbyte = size(last_web_list[domain]['sendbyte'], system=si)
+                    sendbyte = size(val['sendbyte'], system=si)
+                    mail_content += '%s:<br>&nbsp;&nbsp; Request(次) %s => %s<br>&nbsp;&nbsp; Traffic %s => %s <br>' % (domain, last_count, count, last_sendbyte, sendbyte)
+                # alert_content += '"%s",' % domain
+            try:
+                mail_title = "%s ~ %s" % (start_time.strftime('%Y-%m-%d %H:%M:%S'), end_time.strftime('%Y-%m-%d %H:%M:%S'))
+                mail_content += "<div><h5>警報標準</h5><p>流量(max): %s</p><p>流量(min): %s</p><p>流量(multiply): %s</p><p>請求(max): %s</p><p>請求(min): %s</p><p>請求(multiply): %s</p></div>" % (traffic_max, traffic_min, traffic_multiply, request_max, request_min, request_multiply)
+                mailSupport(mail_title, mail_content, "域名可能遭受攻擊！")
+            except Exception as e:
+                write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
+
+            # try:
+            #     wachter_alert_cdn(datetime.strftime('%Y-%m-%d %H:%M:%S'), alert_content)
+            # except Exception as e:
+            #     write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
 
 def update_period(p1, p2):
     print("Start update period %s ~ %s" % (p1, p2))
