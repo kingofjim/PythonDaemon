@@ -106,7 +106,7 @@ def start():
             print(errMsg)
             # mailSupport("PythonDaemon ERROR", errMsg)
 
-        time.sleep(5)
+        # time.sleep(5)
         now = datetime.now()
 
 
