@@ -106,7 +106,7 @@ def start():
             print(errMsg)
             # mailSupport("PythonDaemon ERROR", errMsg)
 
-        # time.sleep(5)
+        time.sleep(5)
         now = datetime.now()
 
 
@@ -119,7 +119,6 @@ def job_nginx_main(start_time, end_time, validate=False):
     print("%s [Web-Main] Job Start" % job_start_time.strftime('%Y-%m-%d %H:%M:%S'))
     global LAST_WEB_LIST
     last_web_list = LAST_WEB_LIST
-    print("last_web_list", last_web_list)
     db = Database()
     start_time_utc = start_time - timedelta(hours=8)
     end_time_utc = end_time - timedelta(hours=8)
