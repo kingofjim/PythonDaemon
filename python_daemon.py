@@ -412,15 +412,15 @@ def watcher(conf, last_web_list, update_list, start_time, end_time):
                     mail_content += '<h4>請求(Request)超標</h4>'
 
                 for domain, val in alert_domain_list[cate].items():
-                    last_count = last_web_list[domain]['count']
+                    last_count = last_web_list[domain][0]
                     count = val['count']
-                    last_sendbyte = size(last_web_list[domain]['sendbyte'], system=si)
+                    last_sendbyte = size(last_web_list[domain][1], system=si)
                     sendbyte = size(val['sendbyte'], system=si)
                     mail_content += '%s:<br>&nbsp;&nbsp; Request(次) %s => %s<br>&nbsp;&nbsp; Traffic %s => %s <br>' % (domain, last_count, count, last_sendbyte, sendbyte)
                 # alert_content += '"%s",' % domain
             try:
                 mail_title = "%s ~ %s" % (start_time.strftime('%Y-%m-%d %H:%M:%S'), end_time.strftime('%Y-%m-%d %H:%M:%S'))
-                mail_content += "<div><h5>警報標準</h5><p>流量(max): %s</p><p>流量(min): %s</p><p>流量(multiply): %s</p><p>請求(max): %s</p><p>請求(min): %s</p><p>請求(multiply): %s</p></div>" % (traffic_max, traffic_min, traffic_multiply, request_max, request_min, request_multiply)
+                mail_content += "<div><h5>警報標準</h5><p>流量(max): %s</p><p>流量(min): %s</p><p>流量(multiply): %s</p><p>請求(max): %s</p><p>請求(min): %s</p><p>請求(multiply): %s</p></div>" % (size(traffic_max, system=si), size(traffic_min, system=si), traffic_multiply, request_max, request_min, request_multiply)
                 mailSupport(mail_title, mail_content, "域名可能遭受攻擊！")
             except Exception as e:
                 write_error_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + e.__str__())
